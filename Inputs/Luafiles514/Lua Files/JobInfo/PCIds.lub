@@ -1,7 +1,7 @@
 --[[
 ****************************************************************************
 *                                                                          *
-*   Copyright (C) 2021-2022 Neo-Mind                                       *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-03-21                                             *
-*   Last Modified : 2022-02-22                                             *
+*   Last Modified : 2022-08-23                                             *
 *                                                                          *
 ****************************************************************************
 ]]--
@@ -291,7 +291,7 @@ PCIds =
 	SKY_EMPEROR   = 4302,
 	SKY_EMPEROR_F = 4316,
 	SOUL_ASCETIC  = 4303,
-	
+
 	--------------
 	-- Costumes --
 	--------------
@@ -314,19 +314,16 @@ PCIds =
 	-- Doram 1st Classes --
 	-----------------------
 	SUMMONER   = 4218,
-	SUMM_MOUNT = 4219, --Cart mount
 
 	----------------------------
 	-- Baby Doram 1st Classes --
 	----------------------------
 	SUMMONER_B   = 4220,
-	SUMM_MOUNT_B = 4221, --Cart mount
-	
+
 	-----------------------
 	-- Doram 2nd Classes --
 	-----------------------
 	SPIRIT_HANDLER   = 4308,
-	SP_HANDLER_MOUNT = 4315, --Cart mount
 }
 
 --[[
@@ -533,21 +530,36 @@ PCMounts =
 	SHEEP_INQUISITOR      = 4275,
 	OSTRICH_TROUBADOUR    = 4276,
 	OSTRICH_TROUVERE      = 4277,
-	
+
 	--------------------------
 	-- Extended 4th Classes --
 	--------------------------
 	HAETAE_SKY_EMPEROR    = 4309,
 	HAETAE_SOUL_ASCETIC   = 4310,
+
+	-----------------------
+	-- Doram 1st Classes --
+	-----------------------
+	SUMM_MOUNT = 4219, --Cart mount
+
+	----------------------------
+	-- Baby Doram 1st Classes --
+	----------------------------
+	SUMM_MOUNT_B = 4221, --Cart mount
+
+	-----------------------
+	-- Doram 2nd Classes --
+	-----------------------
+	SP_HANDLER_MOUNT = 4315, --Cart mount
 }
 
 --[[
 
-(¯`·¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯)
+(ï¿½`ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½)
 ( \                                                      / )
  ( ) Mapping of Job Ids to corresponding Cash Mount IDs ( )
   (/                                                    \)
-   (.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.)
+   (.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.)
 
 ]]--
 
@@ -769,15 +781,30 @@ Halter_Table =
 	[PCIds.INQUISITOR]     = PCMounts.SHEEP_INQUISITOR,
 	[PCIds.TROUBADOUR]     = PCMounts.OSTRICH_TROUBADOUR,
 	[PCIds.TROUVERE]       = PCMounts.OSTRICH_TROUVERE,
+
+	-----------------------
+	-- Doram 1st Classes --
+	-----------------------
+	[PCIds.SUMMONER]       = PCMounts.SUMM_MOUNT,
+
+	----------------------------
+	-- Baby Doram 1st Classes --
+	----------------------------
+	[PCIds.SUMMONER_B]     = PCMounts.SUMM_MOUNT_B,
+
+	-----------------------
+	-- Doram 2nd Classes --
+	-----------------------
+	[PCIds.SPIRIT_HANDLER] = PCMounts.SP_HANDLER_MOUNT
 }
 
 --[[
 
-(¯`·¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯)
+(ï¿½`ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½)
 ( \                           / )
  ( ) List of scaling factors ( )
   (/                         \)
-   (.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.)
+   (.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.)
 
 ]]--
 
@@ -791,11 +818,11 @@ DefScale = 0    --Default (no scaling or not applicable)
 
 --[[
 
-(¯`·¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.··´¯)
+(ï¿½`ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½ï¿½)
 ( \                                              / )
  ( ) Mapping of Baby Jobs to Spr scaling factor ( )
   (/                                            \)
-   (.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸)
+   (.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½)
 
 ]]--
 
@@ -888,11 +915,10 @@ Shrink_Map =
 	[PCIds.STAR_EMPEROR_F_B] = Scales[2],
 	[PCIds.SOUL_REAPER_B]    = Scales[2],
 
-	------------------------
+	----------------------------
 	-- Baby Doram 1st Classes --
-	------------------------
+	----------------------------
 	[PCIds.SUMMONER_B]   = Scales[3],
-	[PCIds.SUMM_MOUNT_B] = Scales[3],
 
 	--[[
 	 __  __   ___   _   _  _  _  _____     ___  ___   ___
@@ -972,4 +998,9 @@ Shrink_Map =
 	-------------------------------
 	[PCMounts.HAETAE_STAR_EMPEROR_B] = DefScale,
 	[PCMounts.HAETAE_SOUL_REAPER_B]  = DefScale,
+
+	----------------------------
+	-- Baby Doram 1st Classes --
+	----------------------------
+	[PCMounts.SUMM_MOUNT_B] = DefScale,
 }
