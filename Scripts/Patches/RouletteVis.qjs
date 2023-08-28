@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -30,14 +30,12 @@
 /// \brief NOP out or Add the Roulette Icon UIWindow creation code (ID = 0x11D or 0x10C)
 ///        and hook it to where it was supposed to be present
 ///
-RouletteVis = function(patchName)
+RouletteVis = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1.1 - Ensure the WINMGR object has been loaded')
+	$$(_, 1.1, `Ensure the WINMGR object has been loaded`)
 	WINMGR.load();
 
-	$$(_ + '1.2 - Find the UIWindow creation before Roulette which is always present (uses ID = 0B5h)')
+	$$(_, 1.2, `Find the UIWindow creation before Roulette which is always present (uses ID = 0B5h)`)
 	let code =
 		JE(0x0F)        //je short _skip
 	+	PUSH(0xB5)      //push 0B5h
@@ -49,19 +47,19 @@ RouletteVis = function(patchName)
 	if (jmpAddr < 0)
 		throw Error("B5 UIWindow creation not found");
 
-	$$(_ + '1.3 - Save location after the CALL')
+	$$(_, 1.3, `Save location after the CALL`)
 	const retnAddr = jmpAddr + code.byteCount() + 4;
 
-	$$(_ + '1.4 - Get window ID based on client date')
+	$$(_, 1.4, `Get window ID based on client date`)
 	const id = (Exe.BuildDate > 20150800) ? 0x10C : 0x11D;
 
-	if (patchName === "ShowRoulette")
+	if (_ === "ShowRoulette")
 	{
-		$$(_ + '2.1 - Check if the instruction at retnAddr is PUSH 11D/10C for Roulette UIWindow creation')
+		$$(_, 2.1, `Check if the instruction at retnAddr is PUSH 11D/10C for Roulette UIWindow creation`)
 		if (Exe.GetUint8(retnAddr) === 0x68 && Exe.GetInt32(retnAddr + 1) === id)
 			Cancel("Roulette Icon is already shown");
 
-		$$(_ + '2.2 - Construct our code to create the icon')
+		$$(_, 2.2, `Construct our code to create the icon`)
 		code +=
 			Filler(1)        //call UIWindowMgr::MakeWindow ; E8 opcode is already there
 		+	PUSH(id)         //push 11Dh / 10Ch
@@ -70,7 +68,7 @@ RouletteVis = function(patchName)
 		+	JMP(Filler(2))   //jmp <retnAddr> ; jump back to retnAddr
 		;
 
-		$$(_ + '2.3 - Prepare the arguments for auto-hook')
+		$$(_, 2.3, `Prepare the arguments for auto-hook`)
 		const args =
 		{
 			targets : {
@@ -79,16 +77,16 @@ RouletteVis = function(patchName)
 			}
 		};
 
-		$$(_ + '2.4 - Add our code and jump to it from jmpAddr')
+		$$(_, 2.4, `Add our code and jump to it from jmpAddr`)
 		AutoHook(jmpAddr, code, args);
 	}
 	else
 	{
-		$$(_ + '3.1 - Ensure its not already hidden')
+		$$(_, 3.1, `Ensure its not already hidden`)
 		if (Exe.GetUint8(retnAddr) !== 0x68 || Exe.GetInt32(retnAddr + 1) !== id)
 			Cancel("Roulette Icon is already hidden");
 
-		$$(_ + '3.2 - NOP it out otherwise (5 for PUSH, 5 for MOV ECX, 5 for CALL similar to the steps for 0B5h above)')
+		$$(_, 3.2, `NOP it out otherwise (5 for PUSH, 5 for MOV ECX, 5 for CALL similar to the steps for 0B5h above)`)
 		Exe.SetNOPs(retnAddr, 15);
 	}
 

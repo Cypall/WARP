@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2021 Neo Mind                                       *
+*   Copyright (C) 2013-2023 Neo Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 /// \brief Change the conditional jump to JMP inside WinMain to skip showing the "Invalid Exe" message.
 ///        The jump can also be inside a seperate function which WinMain calls.
 ///
-NoFilenameCheck = function()
+NoFilenameCheck = function(_)
 {
-	const _ = 'NoFilenameCheck : ';
-
-	$$(_ + '1.1 - Find the error string PUSH')
+	$$(_, 1.1, `Find the error string PUSH`)
 	const suffix = PUSH(this.StrAddr);
 
 	let addr = Exe.FindHex( PUSH_0 + PUSH_0 + suffix );
@@ -45,7 +43,7 @@ NoFilenameCheck = function()
 	if (addr < 0)
 		throw Error("Reference PUSH missing");
 
-	$$(_ + '1.2 - Find the comparison before it')
+	$$(_, 1.2, `Find the comparison before it`)
 	const code =
 		CALL(NEG2WC)    //call SearchProcessIn9X
 	+	JMP(5)          //jmp short _skip#2
@@ -58,7 +56,7 @@ NoFilenameCheck = function()
 	if (addr < 0)
 		throw Error("Comparison not found");
 
-	$$(_ + '2 - Change the conditional jump')
+	$$(_, 2, `Change the conditional jump`)
 	Exe.SetJMP(addr + code.byteCount() - 2);
 
 	return true;

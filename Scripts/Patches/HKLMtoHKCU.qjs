@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) ?-2021 Shinryo                                           *
+*   Copyright (C) ?-2023 Shinryo                                           *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,23 +22,21 @@
 *                                                                          *
 *   Author(s)     : Shinryo                                                *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Change all HKEY_LOCAL_MACHINE parameters to HKEY_CURRENT_USER
 ///
-HKLMtoHKCU = function()
+HKLMtoHKCU = function(_)
 {
-	const _ = 'HKLMtoHKCU : ';
-
-	$$(_ + '1 - Find all occurrences of PUSH HKEY_LOCAL_MACHINE (0x80000002)')
+	$$(_, 1, `Find all occurrences of PUSH HKEY_LOCAL_MACHINE (0x80000002)`)
 	const addrs = Exe.FindHexN( PUSH(0x80000002) );
 	if (addrs.isEmpty())
 		throw Error("HKEY_LOCAL_MACHINE not PUSHed");
 
-	$$(_ + '2 - Change all to HKEY_CURRENT_USER (0x80000001). Ignore in case opcode following the PUSH is a 3B (it is a false match)')
+	$$(_, 2, `Change all to HKEY_CURRENT_USER (0x80000001). Ignore in case opcode following the PUSH is a 3B (it is a false match)`)
 	const found = addrs.filter( addr =>
 	{
 		if (Exe.GetUint8(addr + 5) !== 0x3B)

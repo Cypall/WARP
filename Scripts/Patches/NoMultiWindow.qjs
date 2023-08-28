@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Ai4rei/AN                                     *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2022-03-04                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -30,16 +30,14 @@
 /// \brief Check for Existing Multiple Window Checker and enforce Disabling.
 ///        If not present, inserts custom code to do the check + disable
 ///
-NoMultiWindow = function()
+NoMultiWindow = function(_)
 {
-	const _ = 'NoMultiWindow : ';
-
-	$$(_ + '1.1 - Find CoInitialize function address')
+	$$(_, 1.1, `Find CoInitialize function address`)
 	const CoInit = Exe.FindFunc("CoInitialize", "ole32.dll");
 	if (CoInit < 0)
 		throw Error("CoInitialize not found");
 
-	$$(_ + '1.2 - Find where it is CALLed from')
+	$$(_, 1.2, `Find where it is CALLed from`)
 	let prefix = PUSH_R;         //push regA
 	const suffix = CALL([CoInit]); //call dword ptr [<&ole32.CoInitialize>]
 
@@ -53,19 +51,19 @@ NoMultiWindow = function()
 	if (addr < 0)
 		throw Error("CoInitialize not CALLed");
 
-	$$(_ + '1.3 - Point addr to location of the CALL')
+	$$(_, 1.3, `Point addr to location of the CALL`)
 	const jmpAddr = addr + prefix.byteCount();
 
-	$$(_ + '1.4 - Find CreateMutexA CALL after the CoInitialize CALL')
+	$$(_, 1.4, `Find CreateMutexA CALL after the CoInitialize CALL`)
 	addr = Exe.FindFunc("CreateMutexA", "KERNEL32.dll");
 	if (addr > 0)
 	{
-		$$(_ + '1.5 - If present then check if its used (then we dont need to add our own code)')
+		$$(_, 1.5, `If present then check if its used (then we dont need to add our own code)`)
 		addr = Exe.FindHex( CALL([addr]), jmpAddr, jmpAddr + 0xD0 );
 
 		if (addr > 0)
 		{
-			$$(_ + '1.6 - If the code after the CALL is MOV EAX , [] change it to assign FFFFFF instead')
+			$$(_, 1.6, `If the code after the CALL is MOV EAX , [] change it to assign FFFFFF instead`)
 			if (Exe.Version < 10 && Exe.GetUint8(jmpAddr + 6) === 0xA1)
 			{
 				Exe.SetHex(jmpAddr + 6, MOV(EAX, 0xFFFFFF))
@@ -78,7 +76,7 @@ NoMultiWindow = function()
 		}
 	}
 
-	$$(_ + '2.1 - Get the essential addresses for our function')
+	$$(_, 2.1, `Get the essential addresses for our function`)
 	ROC.findImports();
 
 	const WaitSingle = Exe.FindFunc("WaitForSingleObject", "KERNEL32.dll");
@@ -88,7 +86,7 @@ NoMultiWindow = function()
 	if (ROC.Kernel32 < 0)
 		throw Error("'KERNEL32.dll' not found");
 
-	$$(_ + '2.2 - Construct our function for mutex windows')
+	$$(_, 2.2, `Construct our function for mutex windows`)
 	const parts =
 	[
 		CALL([CoInit])                 //call dword ptr [&ole32.CoInitialize>] ; args are already pushed
@@ -127,7 +125,7 @@ NoMultiWindow = function()
 
 	const [, _quit, _return, allocSize] = MapAddrs(parts);
 
-	$$(_ + '2.3 - Prepare the arguments for auto hook')
+	$$(_, 2.3, `Prepare the arguments for auto hook`)
 	const args =
 	{
 		allocSize,
@@ -141,7 +139,7 @@ NoMultiWindow = function()
 		nops : 1 //since the original code is 6 bytes
 	};
 
-	$$(_ + '2.4 - Add our code and jump to it from jmpAddr')
+	$$(_, 2.4, `Add our code and jump to it from jmpAddr`)
 	AutoHook(jmpAddr, parts, args);
 
 	return true;

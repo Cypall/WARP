@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 CH.C (jchcc)                                   *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2021-01-14                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,23 +31,21 @@
 /// \brief Modify the switch case for displaying the various buttons to display/hide the ones we selected
 ///        inside UINewBasicWnd::UINewBasicWnd function
 ///
-NewButtonVis = function(patchName)
+NewButtonVis = function(_)
 {
-	const _ = patchName + ' : ';
-
 	if ( !CACHE.has('NBV_Refs') )
 	{
-		$$(_ + '1.1 - Find \'status_doram\'')
+		$$(_, 1.1, `Find the string 'status_doram'`)
 		let addr = Exe.FindText("status_doram");
 		if (addr < 0)
 			throw Error("Reference string missing");
 
-		$$(_ + '1.2 - Find where it is used in a PUSH along with its length (12 characters)')
+		$$(_, 1.2, `Find where it is PUSHed along with its length (12 characters)`)
 		const refAddr = Exe.FindHex(PUSH(0xC) + PUSH(addr));
 		if (refAddr < 0)
 			throw Error("Reference string not PUSHed");
 
-		$$(_ + '1.3 - Find the start of the function')
+		$$(_, 1.3, `Find the start of the function`)
 		let code =
 			FP_START     //push ebp
 			             //mov ebp, esp
@@ -59,7 +57,7 @@ NewButtonVis = function(patchName)
 		if (beginAddr < 0)
 			throw Error("Function start missing");
 
-		$$(_ + '1.4 - Find all the ID assignments & string PUSHes (they will be in same order)')
+		$$(_, 1.4, `Find all the ID assignments & string PUSHes (they will be in same order)`)
 		let idAssigners, strPushers;
 		if (Exe.Version === 11)
 		{
@@ -87,7 +85,7 @@ NewButtonVis = function(patchName)
 		if (strPushers.isEmpty())
 			throw Error("String PUSHes missing");
 
-		$$(_ + '1.5 - Extract the ID values')
+		$$(_, 1.5, `Extract the ID values`)
 		let idList = [];
 		for (const addr of idAssigners)
 		{
@@ -109,7 +107,7 @@ NewButtonVis = function(patchName)
 		if (idList.length !== strPushers.length)
 			throw Error("Either String or ID missing");
 
-		$$(_ + '1.6 - Map & assign the IDs based on the strings PUSHed')
+		$$(_, 1.6, `Map & assign the IDs based on the strings PUSHed`)
 		let IDMap = new Map();
 
 		strPushers.forEach( (addr, idx) =>
@@ -120,28 +118,28 @@ NewButtonVis = function(patchName)
 			IDMap.set(name, idList[idx]);
 		});
 
-		$$(_ + '2.1 - Find the Jump table used for switch')
+		$$(_, 2.1, `Find the Jump table used for switch`)
 		let prefix = MOVZX(EAX, BYTE_PTR, [EAX, POS4WC]); //movzx eax, byte ptr [eax + switchTbl]
 		let suffix = JMP([4, EAX, POS4WC]);               //jmp dword ptr [eax*4 + jumpTbl]
 
 		addr = Exe.FindHex(prefix + suffix, refAddr + 5, refAddr + 0x60);
 		if (addr > 0)
 		{
-			$$(_ + '2.2 - If found then set the type to 1')
+			$$(_, 2.2, `If found then set the type to 1`)
 			const Type = 1;
 
-			$$(_ + '2.3 - Save the VIRTUAL location (serves as the returning address)')
+			$$(_, 2.3, `Save the VIRTUAL location (serves as the returning address)`)
 			const RetnAddr = Exe.Phy2Vir(addr, CODE);
 
-			$$(_ + '2.4 - Extract the switchTbl address')
+			$$(_, 2.4, `Extract the switchTbl address`)
 			const jmpDpAddr = addr + prefix.byteCount();
 			const switchTbl = Exe.Vir2Phy(Exe.GetInt32(jmpDpAddr - 4), CODE);
 
-			$$(_ + '2.5 - Calculate the addresses for Hidden (OFF) & Visible (ON) states')
+			$$(_, 2.5, `Calculate the addresses for Hidden (OFF) & Visible (ON) states`)
 			const OffAddr = CaseAddr(0, VIRTUAL, addr, jmpDpAddr);
 			const OnAddr  = CaseAddr(1, VIRTUAL, addr, jmpDpAddr);
 
-			$$(_ + '2.6 - Now find the limiting comparison before the switch table')
+			$$(_, 2.6, `Now find the limiting comparison before the switch table`)
 			prefix = LEA(EAX, [EBX, NEG2WC]); //lea eax, [ebx - limitL]
 			suffix = CMP(EAX, POS1WC);        //cmp eax, range
 			let IDReg = EBX;
@@ -157,15 +155,15 @@ NewButtonVis = function(patchName)
 			if (addr2 < 0)
 				throw Error("Limiting comparison missing");
 
-			$$(_ + '2.7 - Save it as our hook address')
+			$$(_, 2.7, `Save it as our hook address`)
 			const HookAddr = addr2;
 
-			$$(_ + '2.8 - Extract the limits')
+			$$(_, 2.8, `Extract the limits`)
 			addr2 += prefix.byteCount();
 			const MinLimit = -Exe.GetInt32(addr2 - 4);
 			const Range = Exe.GetInt32(addr2 + 1);
 
-			$$(_ + '2.9 - Isolate the visible & hidden button names. Also save the table address (PHYSICAL) when applicable for each button')
+			$$(_, 2.9, `Isolate the visible & hidden button names. Also save the table address (PHYSICAL) when applicable for each button`)
 			let Visible = [];
 			let Hidden = [];
 			let TblAddrs = new Map();
@@ -189,7 +187,7 @@ NewButtonVis = function(patchName)
 				}
 			}
 
-			$$(_ + '2.10 - Put everything in the CACHE')
+			$$(_, 2.10, `Put everything in the CACHE`)
 			CACHE.put('NBV_Refs', {
 				IDMap,
 				Type,
@@ -207,10 +205,10 @@ NewButtonVis = function(patchName)
 		}
 		else
 		{
-			$$(_ + '3.1 - Since table is not there set the type. The switch gets implemented with direct comparisons')
+			$$(_, 3.1, `Since table is not there set the type. The switch gets implemented with direct comparisons`)
 			const Type = 2;
 
-			$$(_ + '3.2 - Find the comparisons')
+			$$(_, 3.2, `Find the comparisons`)
 			prefix =
 				CMP(EBX, POS2WC) //CMP EBX, 164 or 162
 			;
@@ -252,11 +250,12 @@ NewButtonVis = function(patchName)
 				prefix =
 					SUB(EAX, POS2WC) //SUB EAX, 16C or 16B or 1E9
 				;
+				const subber = Exe.BuildDate > 20220000 ? 0x3B : 0x30;
 				suffix =
 					JZ(POS2WC)       //jz offAddr
 				+	SUB(EAX, 0x8B)   //sub eax, 8Bh
 				+	JZ(POS2WC)       //jz offAddr
-				+	SUB(EAX, 0x30)   //sub eax, 30h
+				+	SUB(EAX, subber) //sub eax, 30h or 3Bh
 				+	JZ(POS2WC)       //jz offAddr
 				;
 				IDReg = EAX;
@@ -265,7 +264,7 @@ NewButtonVis = function(patchName)
 				if (addr > 0)
 				{
 					const first = Exe.GetInt32(addr + 1);
-					OffIDs = [first, first + 0x8B, first + 0xBB];
+					OffIDs = [first, first + 0x8B, first + 0x8B + subber];
 				}
 			}
 			if (addr < 0)
@@ -286,10 +285,10 @@ NewButtonVis = function(patchName)
 			if (addr < 0)
 				throw Error("Switch case missing");
 
-			$$(_ + '3.3 - Save the location as our hook address')
+			$$(_, 3.3, `Save the location as our hook address`)
 			const HookAddr = addr;
 
-			$$(_ + '3.4 - Calculate the addresses for Hidden (OFF) & Visible (ON) states')
+			$$(_, 3.4, `Calculate the addresses for Hidden (OFF) & Visible (ON) states`)
 			addr += prefix.byteCount();
 			const OffAddr = Exe.GetTgtAddr(addr + 2);
 
@@ -297,7 +296,7 @@ NewButtonVis = function(patchName)
 			const OnAddr = Exe.Phy2Vir(addr, CODE);
 			const RetnAddr = OnAddr; //also serves as the return address.
 
-			$$(_ + '3.5 - Isolate the visible & hidden button names')
+			$$(_, 3.5, `Isolate the visible & hidden button names`)
 			let Visible = [];
 			let Hidden = [];
 
@@ -309,7 +308,7 @@ NewButtonVis = function(patchName)
 					Visible.push(key);
 			}
 
-			$$(_ + '3.6 - Put everything in the CACHE')
+			$$(_, 3.6, `Put everything in the CACHE`)
 			CACHE.put('NBV_Refs', {
 				IDMap,
 				Type,
@@ -325,11 +324,11 @@ NewButtonVis = function(patchName)
 		}
 	}
 
-	$$(_ + '4.1 - Setup values based on patchName')
+	$$(_, 4.1, `Setup values based on patchName`)
 	let varName, title, suffix, btnChoices;
 
 	const Refs = CACHE.get('NBV_Refs');
-	if (patchName === 'HideNewButtons')
+	if (_ === 'HideNewButtons')
 	{
 		varName = '$newHiddenButtons';
 		title = "Hide Buttons";
@@ -344,18 +343,18 @@ NewButtonVis = function(patchName)
 		btnChoices = Refs.Hidden;
 	}
 
-	$$(_ + '4.2 - Retrieve the user\'s selection')
+	$$(_, 4.2, `Retrieve the user's selection`)
 	const selection = Exe.GetUserInput(varName, D_MultiChoice, title, "Choose the buttons to be " + suffix, [], {choices: btnChoices});
 	if (selection === false || selection.isEmpty())
 		Cancel("No new buttons are " + suffix);
 
-	$$(_ + '4.3 - Save the selection')
-	CACHE.put('Selection:' + patchName, selection);
+	$$(_, 4.3, `Save the selection`)
+	CACHE.put('Selection:' + _, selection);
 
-	$$(_ + '4.4 - Call the helper to stage the changes')
-	CACHE.addUser('NBV', patchName);
+	$$(_, 4.4, `Call the helper to stage the changes`)
+	CACHE.addUser('NBV', _);
 
-	this.stage(patchName);
+	this.stage(_);
 
 	return true;
 };
@@ -367,18 +366,18 @@ NewButtonVis.stage = function(patchName)
 {
 	const _ = `${patchName}.stage : `;
 
-	$$(_ + '1.1 - Begin the common tag')
+	$$(_, 1.1, `Begin the common tag`)
 	Exe.BeginTag(CACHE.getTag('NBV'), true);
 
-	$$(_ + '1.2 - Prepare the array to store IDs of newly visible buttons (Used for Type 2)')
+	$$(_, 1.2, `Prepare the array to store IDs of newly visible buttons (Used for Type 2)`)
 	let onIDs = [];
 
-	$$(_ + '1.3 - Retrieve the stored reference db')
+	$$(_, 1.3, `Retrieve the stored reference db`)
 	const Refs = CACHE.get('NBV_Refs');
 
 	const {Type, IDMap, IDReg, TblAddr} = Refs;
 
-	$$(_ + '2.2 - Iterate through the current selection and change the value in table or add corresponding JE to code')
+	$$(_, 2.2, `Iterate through the current selection and change the value in table or add corresponding JE to code`)
 	const index = this.Members.indexOf(patchName);
 	let selection = CACHE.get('Selection:' + patchName);
 
@@ -402,7 +401,7 @@ NewButtonVis.stage = function(patchName)
 		}
 	}
 
-	$$(_ + '2.3 - Repeat the process for the other selection')
+	$$(_, 2.3, `Repeat the process for the other selection`)
 	const otherIndex = 1 - index;
 	const otherPatch = this.Members[otherIndex];
 	selection = CACHE.get('Selection:' + otherPatch);
@@ -433,7 +432,7 @@ NewButtonVis.stage = function(patchName)
 	if (prefix.isEmpty() && suffix.isEmpty())
 		return;
 
-	$$(_ + '2.4 - Now fill up the rest')
+	$$(_, 2.4, `Now fill up the rest`)
 	let parts =
 	[
 		prefix
@@ -471,7 +470,7 @@ NewButtonVis.stage = function(patchName)
 		);
 	}
 
-	$$(_ + '2.5 - Prepare the arguments for auto-hook')
+	$$(_, 2.5, `Prepare the arguments for auto-hook`)
 	const {OffAddr, OnAddr, HookAddr, RetnAddr} = Refs;
 
 	const args =
@@ -484,7 +483,7 @@ NewButtonVis.stage = function(patchName)
 		}
 	};
 
-	$$(_ + '2.6 - Add our code and jump to it from HookAddr')
+	$$(_, 2.6, `Add our code and jump to it from HookAddr`)
 	AutoHook(HookAddr, parts, args);
 };
 

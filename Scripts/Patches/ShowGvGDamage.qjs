@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Andrei Karas (4144)                                 *
-*   Copyright (C) 2018-2021 X-EcutiOnner (xex.ecutionner@gmail.com)        *
+*   Copyright (C) 2021-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Andrei, X-EcutiOnner                                   *
 *   Created Date  : 2021-06-01                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,13 +31,14 @@
 /// \brief NOPs out the JZ following TEST EAX, EAX after Comparison
 ///        to Show Damage on GvG Maps during the Guild War.
 ///
-ShowGvGDamage = function(patchName)
+ShowGvGDamage = function(_)
 {
-	const _ = 'ShowGvGDamage : ';
+	$$(_, 1, `Load the SSN`)
+	SSN.load();
 
-    $$(_ + '1 - Find the code responsible for checking GvG mapflag before showing Damage values')
+    $$(_, 2, `Find the code responsible for checking GvG mapflag before showing Damage values`)
 	const mct =
-		MOV(ECX, POS4WC)
+		MOV(ECX, SSN)
 	+	CALL(ALLWC)
 	+	TEST(EAX, EAX)
 	;
@@ -60,7 +61,7 @@ ShowGvGDamage = function(patchName)
 	if (addr < 0)
 		throw Error("Pattern missing");
 
-	$$(_ + '2 - NOP it all out')
+	$$(_, 3, `NOP it all out`)
 	Exe.SetNOPs(addr, code.byteCount());
 
     /* Keeping it around for reference later

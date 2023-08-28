@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2019-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2019-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,23 +22,21 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Change the JA to JMP after the lub file reference
 ///
-UseStateLubIcon = function()
+UseStateLubIcon = function(_)
 {
-	const _ = 'UseStateLubIcon : ';
-
-	$$(_ + '1 - Find where \'GetEFSTImgFileName\' is PUSHed')
+	$$(_, 1, `Find where 'GetEFSTImgFileName' is PUSHed`)
 	let addr = Exe.FindHex( PUSH(this.StrAddr) );
 	if (addr < 0)
 		throw Error("Reference string not PUSHed");
 
-	$$(_ + '2 - Find the comparison followed by switch-case')
+	$$(_, 2, `Find the comparison followed by switch-case`)
 	const limit = (Exe.BuildDate > 20130626 ? 4 : 3);
 	const code =
 		CMP(R32, limit)        //cmp regA, 4/3
@@ -50,7 +48,7 @@ UseStateLubIcon = function()
 	if (addr < 0)
 		throw Error("Comparison missing");
 
-	$$(_ + '3 - Change JA to JMP')
+	$$(_, 3, `Change JA to JMP`)
 	Exe.SetJMP(addr + 3);
 
 	return true;

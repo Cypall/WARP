@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2015 Curiosity                                           *
-*   Copyright (C) 2015-2021 Neo-Mind                                       *
+*   Copyright (C) 2015-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,18 +23,16 @@
 *                                                                          *
 *   Author(s)     : Curiosity, Neo-Mind                                    *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-08-27                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Make models in front of player turn transparent
 ///
-RestoreModelCulling = function()
+RestoreModelCulling = function(_)
 {
-	const _ = 'RestoreModelCulling : ';
-
-	$$(_ + '1.1 - Find C3dActor::CullByOBB')
+	$$(_, 1.1, `Find C3dActor::CullByOBB`)
 	const sreg = ROC.StkReg;
 	let parts =
 	[//0
@@ -72,12 +70,12 @@ RestoreModelCulling = function()
 	if (addr < 0)
 		throw Error("CullByOBB not found");
 	
-	$$(_ + '1.2 - NOP out the conditional jump')
+	$$(_, 1.2, `NOP out the conditional jump`)
 	Exe.SetNOPs(addr, 2);
 
 	if (oldStyle)
 	{
-		$$(_ + '2.1 - Find location of C3dNode::SetToAlpha CALL')
+		$$(_, 2.1, `Find location of C3dNode::SetToAlpha CALL`)
 		if (Exe.Version === 6) //VC6
 			addr = Exe.FindHex( MOV(ECX, [ESI, 8]) + CALL(), addr + 7, addr + 0x40); //mov ecx, dword ptr [esi+8]
 			                                                                         //call C3dNode::SetToAlpha
@@ -88,7 +86,7 @@ RestoreModelCulling = function()
 		if (addr < 0)
 			throw Error("SetToAlpha CALL not found");
 
-		$$(_ + '2.2 - Change the CALL to m_isHalfAlpha assignment')
+		$$(_, 2.2, `Change the CALL to m_isHalfAlpha assignment`)
 		code = MOV(BYTE_PTR, [ESI, 0x1EC], 1); // mov byte ptr [esi+1ECh], 1h ; (m_isHalfAlpha = 1)
 
 		if (Exe.Version === 6) //VC6 has extra byte
@@ -98,15 +96,15 @@ RestoreModelCulling = function()
 	}
 	else
 	{
-		$$(_ + '3.1 - Find the comparison before it')
+		$$(_, 3.1, `Find the comparison before it`)
 		const cmpAddr = Exe.FindLastHex(CMP(BYTE_PTR, [ESI, POS2WC], 1), addr, addr - 10);
 		if (addr < 0)
 			throw Error("Vital comparison missing");
 		
-		$$(_ + '3.2 - Extract the displacement')
+		$$(_, 3.2, `Extract the displacement`)
 		const disp = Instr.FromAddr(cmpAddr).Disp;
 		
-		$$(_ + '3.3 - Find other such comparisons followed by JNE & NOP the jump') //m_isHideCheck tests
+		$$(_, 3.3, `Find other such comparisons followed by JNE & NOP the jump`) //m_isHideCheck tests
 		const jne = JNE(WCp);
 		for (const memAddr of Exe.FindHexN( CMP(BYTE_PTR, [ESI, disp], 1) ))
 		{

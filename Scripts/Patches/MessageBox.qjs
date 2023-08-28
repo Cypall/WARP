@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2022 Andrei Karas (4144)                            *
+*   Copyright (C) 2021-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2021-10-01                                             *
-*   Last Modified : 2022-04-03	                                           *
+*   Last Modified : 2023-08-26	                                           *
 *                                                                          *
 \**************************************************************************/
 
@@ -42,21 +42,19 @@ MB_Types =
 ///
 /// \brief Changes MessageBoxA calls to custom function which calls MessageBeep instead.
 ///
-MsgBox2Beep = function()
+MsgBox2Beep = function(_)
 {
-	const _ = 'MsgBox2Beep : ';
-
-	$$(_ + '1 - Find references of  MessageBoxA function')
+	$$(_, 1, `Find references of  MessageBoxA function`)
 	const {refAddrs} = GetImpRefs("MessageBoxA");
 	if (refAddrs == undefined)
 		throw Error("MessageBoxA not used");
 
-	$$(_ + '2.1 - Get the beep type from user')
+	$$(_, 2.1, `Get the beep type from user`)
 	const key = Exe.GetUserInput('$beepType', D_Choice, "MessageBox Change", "Enter the beep type expected", 'OK_DEFAULT', {choices: Object.getOwnPropertyNames(MB_Types), saveDefault: true});
 	if (key === false)
 		Cancel("MessageBox reverted");
 
-	$$(_ + '2.2 - Construct the replacement function')
+	$$(_, 2.2, `Construct the replacement function`)
 	const parts =
 	[//0
 		Filler(1)                  //points to function below
@@ -84,7 +82,7 @@ MsgBox2Beep = function()
 	];
 	const [, beepFnAddr, newFnAddr, _loaded, allocSize] = MapAddrs(parts);
 
-	$$(_ + '2.3 - Prepare the arguments for auto-hook')
+	$$(_, 2.3, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		allocSize,
@@ -98,7 +96,7 @@ MsgBox2Beep = function()
 		isPtr : true
 	};
 
-	$$(_ + '2.4 - Add our code and update the references')
+	$$(_, 2.4, `Add our code and update the references`)
 	AutoHook(refAddrs, parts, args);
 
 	return true;
@@ -107,22 +105,20 @@ MsgBox2Beep = function()
 ///
 /// \brief Changes the calls to MessageBoxA to a custom function which changes the 4th argument to incorporate the icon needed.
 ///
-ShowMsgIcon = function()
+ShowMsgIcon = function(_)
 {
-	const _ = 'ShowMsgIcon : ';
-
-	$$(_ + '1 - Find references of  MessageBoxA function')
+	$$(_, 1, `Find references of  MessageBoxA function`)
 	const {refAddrs} = GetImpRefs("MessageBoxA");
 	if (refAddrs == undefined)
 		throw Error("MessageBoxA not used");
 
-	$$(_ + '2.1 - Get the icon type from user')
+	$$(_, 2.1, `Get the icon type from user`)
 	const choices = Object.getOwnPropertyNames(MB_Types).filter(v => v !== "SIMPLE_BEEP");
 	const key = Exe.GetUserInput('$msgIconType', D_Choice, "MessageBox Change", "Enter the beep type expected", 'OK_DEFAULT', {choices});
 	if (key === false)
 		Cancel("MessageBox reverted");
 
-	$$(_ + '2.2 - Construct the new function')
+	$$(_, 2.2, `Construct the new function`)
 	const code =
 		Filler(1)               // ; points to function below
 	+	MOV(EAX, [ESP, 0x10])   //mov eax, dword ptr [ARG.4]
@@ -132,7 +128,7 @@ ShowMsgIcon = function()
 	+	JMP([ROC.MsgBoxA])      //jmp dword ptr [<&USER32.MessageBoxA>]
 	;
 
-	$$(_ + '2.3 - Prepare the arguments for auto-hook')
+	$$(_, 2.3, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		localVals : {
@@ -141,7 +137,7 @@ ShowMsgIcon = function()
 		isPtr : true
 	};
 
-	$$(_ + '2.4 - Add the code and update the references')
+	$$(_, 2.4, `Add the code and update the references`)
 	AutoHook(refAddrs, code, args);
 
 	return true;
@@ -150,23 +146,21 @@ ShowMsgIcon = function()
 ///
 /// \brief Changes the calls to MessageBoxA to simply return without doing anything
 ///
-NoMsgBox = function()
+NoMsgBox = function(_)
 {
-	const _ = 'NoMsgBox : ';
-
 	if (!Warp.TestMode)
 	{
-		$$(_ + '1.1 - Deactivate all the "Ignore*Error" patches')
+		$$(_, 1.1, `Deactivate all the "Ignore*Error" patches`)
 		for (const name of ["IgnoreRsrcErr", "IgnorePalErr", "IgnoreQuestErr", "IgnoreLuaErr", "IgnoreEntryQueueErr"])
 			Warp.SetPatchState(name, false);
 	}
 
-	$$(_ + '1.2 - Find references of  MessageBoxA function')
+	$$(_, 1.2, `Find references of  MessageBoxA function`)
 	const {refAddrs} = GetImpRefs("MessageBoxA");
 	if (refAddrs == undefined)
 		throw Error("MessageBoxA not used");
 
-	$$(_ + '2.1 - Prepare the new function')
+	$$(_, 2.1, `Prepare the new function`)
 	const code =
 		Filler(1)     // ; points to function below
 	+	XOR(EAX, EAX) //xor eax, eax
@@ -174,7 +168,7 @@ NoMsgBox = function()
 	+	RETN(0x10)    //retn 10h
 	;
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		localVals : {
@@ -183,7 +177,7 @@ NoMsgBox = function()
 		isPtr : true
 	};
 
-	$$(_ + '2.3 - Add the code and update the references')
+	$$(_, 2.3, `Add the code and update the references`)
 	AutoHook(refAddrs, code, args);
 
 	return true;

@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,18 +23,16 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief NOP out the conditional jump after Langtype comparison in EOT font checker function
 ///
-EnableEotFonts = function()
+EnableEotFonts = function(_)
 {
-	const _ = 'EnableEotFonts : ';
-
-	$$(_ + '1 - Find the Langtype comparison')
+	$$(_, 1, `Find the Langtype comparison`)
 	const code =
 		JNE(0xAE)    //jne _skip - Skips .eot loading
 	+   CALL(ALLWC)  //call func#1
@@ -45,7 +43,7 @@ EnableEotFonts = function()
 	if (addr < 0)
 		throw Error("Langtype comparison not found");
 
-	$$(_ + '2 - NOP out the jump')
+	$$(_, 2, `NOP out the jump`)
 	Exe.SetNOPs(addr, 6);
 
 	return true;

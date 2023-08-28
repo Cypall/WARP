@@ -1,10 +1,10 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2022 Neo-Mind                                       *
-*   Copyright (C) 2018-2022 Jian                                           *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2018-2023 Jian                                           *
 *   Copyright (C) 2017 Secret                                              *
-*   Copyright (C) 2017-2022 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2022 X-EcutiOnner                                   *
+*   Copyright (C) 2017-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2023 X-EcutiOnner                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -26,30 +26,28 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind, Jian, Secret, Andrei (4144), X-EcutiOnner    *
 *   Created Date  : 2020-11-09                                             *
-*   Last Modified : 2022-02-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Common function to change specific file paths
 ///
-CustomPath = function(patchName)
+CustomPath = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1.1 - Ensure \'Disable BGM\' is not selected (unless in test mode)')
-	if (!Warp.TestMode && patchName === 'CustomDefaultBGM')
+	$$(_, 1.1, `Ensure 'Disable BGM' is not selected (unless in test mode)`)
+	if (!Warp.TestMode && _ === 'CustomDefaultBGM')
 		Warp.SetPatchState("NoBGMAudio", false);
 
-	$$(_ + '1.2 - Retrieve the data for the index')
-	const {varName, prefix, strType, name, nameAddr} = this.Data.get(patchName);
+	$$(_, 1.2, `Retrieve the data for the index`)
+	const {varName, prefix, strType, name, nameAddr} = this.Data.get(_);
 
-	$$(_ + '1.3 - Find location where the string is used in a PUSH')
+	$$(_, 1.3, `Find location where the string is PUSHed`)
 	const addr = Exe.FindHex( PUSH(nameAddr) );
 	if (addr < 0)
 		throw Error(`'${name} not used`);
 
-	$$(_ + '1.4 - Get the new file name from user')
+	$$(_, 1.4, `Get the new file name from user`)
 	const suf = strType === "Prefix" ? "without .lub" : "";
 	const newStr = Exe.GetUserInput(
 		varName, D_Text, `File ${strType}`,
@@ -60,10 +58,10 @@ CustomPath = function(patchName)
 	if (newStr === false)
 		Cancel(strType, name);
 
-	$$(_ + '2.1 - Add the file name')
+	$$(_, 2.1, `Add the file name`)
 	const [, freeVir] = Exe.AddFromVar(varName);
 
-	$$(_ + '2.2 - Update the PUSHed address')
+	$$(_, 2.2, `Update the PUSHed address`)
 	Exe.SetUint32(addr + 1, freeVir);
 
 	return true;
@@ -72,9 +70,9 @@ CustomPath = function(patchName)
 ///
 /// \brief Common functions to validate
 ///
-CustomPath.validate = function(patchName)
+CustomPath.validate = function(_)
 {
-	let data = this.Data.get(patchName);
+	let data = this.Data.get(_);
 
 	if ('parts' in data) //need to derive the name from parts and then find its address.
 	{
@@ -245,44 +243,42 @@ CustomPath.Data = MakeMap(
 /// \brief Change the "..\\licence.txt" & the EULA error string reference to user specified file
 ///
 Orig_LicTxt = "..\\licence.txt";
-CustomLicenseTxt = function()
+CustomLicenseTxt = function(_)
 {
-	const _ = 'CustomLicenseTxt : ';
-
-	$$(_ + '1.1 - Find \'..\\licence.txt\'')
+	$$(_, 1.1, `Find the string '..\\licence.txt'`)
 	let addr = Exe.FindText(Orig_LicTxt, CASE_INSENSITIVE);
 	if (addr < 0)
 		throw Error(`'${Orig_LicTxt}' not found`);
 
-	$$(_ + '1.2 - Find where it is assigned')
+	$$(_, 1.2, `Find where it is assigned`)
 	addr = Exe.FindHex( MOV([POS3WC], addr) ); //MOV DWORD PTR DS:[g_licence], stringAddr
 	if (addr < 0)
 		throw Error(`'${Orig_LicTxt}' not assigned`);
 
-	$$(_ + '2.1 - Get new Filename from user')
+	$$(_, 2.1, `Get new Filename from user`)
 	const varName = '$licenseTXT';
 	const newFile = Exe.GetUserInput(varName, D_Text, "License file", "Enter the name of the Txt file", Orig_LicTxt, {minLen: 9, maxLen: 14});
 	if (newFile === false)
 		Cancel("License file", Orig_LicTxt);
 
-	$$(_ + '2.2 - Add the new file name')
+	$$(_, 2.2, `Add the new file name`)
 	let [, freeVir] = Exe.AddFromVar(varName);
 
-	$$(_ + '2.3 - Change the address in the assignment')
+	$$(_, 2.3, `Change the address in the assignment`)
 	Exe.SetInt32(addr + 6, freeVir);
 
-	$$(_ + '3.1 - Find EULA string')
+	$$(_, 3.1, `Find EULA string`)
 	addr = Exe.FindText("No EULA text file. (licence.txt)");
 	if (addr < 0)
 		throw Error("EULA string not found");
 
-	$$(_ + '3.2 - Prepare the new EULA error string using the filename received')
+	$$(_, 3.2, `Prepare the new EULA error string using the filename received`)
 	const eulaString = "No EULA text file. (" + newFile.replace("..\\", "") + ")";
 
-	$$(_ + '3.3 - Add the new ELA error string');
+	$$(_, 3.3, `Add the new ELA error string`);
 	[, freeVir] = Exe.AddText(eulaString);
 
-	$$(_ + '3.5 - Update all PUSHes & assigments using the original EULA error string')
+	$$(_, 3.5, `Update all PUSHes & assigments using the original EULA error string`)
 	const found = [
 		PUSH(0x20) + PUSH(addr),
 		JMP(0x10) + PUSH(addr),
@@ -310,18 +306,16 @@ CustomLicenseTxt = function()
 ///
 /// \brief Change the clientinfo.xml reference to custom file specified by user
 ///
-CustomClientInfo = function()
+CustomClientInfo = function(_)
 {
-	const _ = 'CustomClientInfo : ';
-
-	$$(_ + '1.1 - Ensure the DGRF object is loaded')
+	$$(_, 1.1, `Ensure the DGRF object is loaded`)
 	DGRF.load();
 
-	$$(_ + '1.2 - Retrieve the refAddr (PUSH location) & calculate the end address')
+	$$(_, 1.2, `Retrieve the refAddr (PUSH location) & calculate the end address`)
 	const fromAddr = DGRF.RefAddr;
 	const toAddr = fromAddr + 0x100; //may not need this much
 
-	$$(_ + '1.3 - Find where the XML is referenced')
+	$$(_, 1.3, `Find where the XML is referenced`)
 	const nameAddr = this.NameAddr;
 
 	let patterns;
@@ -353,11 +347,11 @@ CustomClientInfo = function()
 
 	const [addr, hasMore] = result;
 
-	$$(_ + '1.4 - Add the address & displacement offset to repLocs')
+	$$(_, 1.4, `Add the address & displacement offset to repLocs`)
 	let repLocs = new Map();
 	repLocs.set(0, addr);
 
-	$$(_ + '1.5 - Find the additional references & save the locations where replacement need to be made')
+	$$(_, 1.5, `Find the additional references & save the locations where replacement need to be made`)
 	if (hasMore)
 	{
 		let has4th = true;
@@ -427,16 +421,16 @@ CustomClientInfo = function()
 		}
 	}
 
-	$$(_ + '2.1 - Get the new name from the user')
+	$$(_, 2.1, `Get the new name from the user`)
 	const varName = '$newclientinfo';
 	const newFile = Exe.GetUserInput(varName, D_Text, "Client Info XML", "Enter the new clientinfo path", this.Name, {minLen: 9, maxLen: 20});
 	if (newFile === false)
 		Cancel("Filename", this.Name);
 
-	$$(_ + '2.2 - Add the new name')
+	$$(_, 2.2, `Add the new name`)
 	const [, freeVir] = Exe.AddFromVar(varName);
 
-	$$(_ + '2.3 - Adjust the references')
+	$$(_, 2.3, `Adjust the references`)
 	for (const [disp, addr] of repLocs)
 		Exe.SetUint32(addr, freeVir + disp);
 

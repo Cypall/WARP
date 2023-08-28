@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2015-2021 Neo-Mind                                       *
+*   Copyright (C) 2015-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-21                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -33,11 +33,9 @@
 ///        for filtering out user specified Job ID List. The function creates the combobox
 ///        so this is the apt location for patch
 ///
-RemoveBookingJobs = function()
+RemoveBookingJobs = function(_)
 {
-	const _ = 'RemoveBookingJobs : ';
-
-	$$(_ + '1.1 - Find the MsgStr CALL used for Job Name loading')
+	$$(_, 1.1, `Find the MsgStr CALL used for Job Name loading`)
 	let code, type;
 	switch (Exe.Version)
 	{
@@ -101,13 +99,13 @@ RemoveBookingJobs = function()
 	if (addr < 0)
 		throw Error("Loop start not found");
 
-	$$(_ + '1.2 - Save location of CALL')
+	$$(_, 1.2, `Save location of CALL`)
 	const callAddr = addr + code.byteCount() - 1;
 
-	$$(_ + '1.3 - Extract MsgStr address')
+	$$(_, 1.3, `Extract MsgStr address`)
 	const MsgStr = Exe.GetTgtAddr(callAddr + 1);
 
-	$$(_ + '2.1 - Prepare Pattern for finding end of the loop')
+	$$(_, 2.1, `Prepare Pattern for finding end of the loop`)
 	///          (We need to RETN to the location before Loop counter increment which is what jmpDelta is for)
 	///
 	let jmpDelta;
@@ -194,20 +192,20 @@ RemoveBookingJobs = function()
 		}
 	}
 
-	$$(_ + '2.2 - Find the pattern')
+	$$(_, 2.2, `Find the pattern`)
 	addr = Exe.FindHex(code, callAddr + 5, callAddr + 0x100);
 	if (addr < 0)
 		throw Error("Loop End not found");
 
-	$$(_ + '2.3 - Get the VIRTUAL location to return to (add jmpDelta value to addr)')
+	$$(_, 2.3, `Get the VIRTUAL location to return to (add jmpDelta value to addr)`)
 	let retnAddr = Exe.Phy2Vir(addr + jmpDelta, CODE);
 
-	$$(_ + '3.1 - Get the Skip List file from User')
+	$$(_, 3.1, `Get the Skip List file from User`)
 	const inFile = Exe.GetUserInput('$bookingList', D_InFile, "Booking Skip List", "Enter the List file containing Job IDs to skip", "Inputs/BookSkipList.yml", {filters : YMLFILTER});
 	if (inFile === false)
 		Cancel("No list file specified");
 
-	$$(_ + '3.2 - Retrieve the list from the file')
+	$$(_, 3.2, `Retrieve the list from the file`)
 	let idList = Warp.LoadYaml(inFile);
 	if (idList === false)
 		return false;
@@ -215,15 +213,15 @@ RemoveBookingJobs = function()
 	else if (!IsArr(idList))
 		throw Error("Need a list of Job IDs");
 
-	$$(_ + '3.3 - Prune out invalid values.')
+	$$(_, 3.3, `Prune out invalid values.`)
 	idList = idList.filter( id => IsNum(id) && id >= 0x65D );
 	if (idList.isEmpty())
 		throw Error("List file contains no valid Job IDs");
 
-	$$(_ + '3.4 - Finish off with NULL at end of the Array')
+	$$(_, 3.4, `Finish off with NULL at end of the Array`)
 	idList.push(0);
 
-	$$(_ + '4.1 - Construct our function to check the ID')
+	$$(_, 4.1, `Construct our function to check the ID`)
 	const parts =
 	[
 		PUSH_EAX               //push eax
@@ -260,10 +258,10 @@ RemoveBookingJobs = function()
 
 	const [, _next, _msgIt, _return, listAddr] = MapAddrs(parts);
 
-	$$(_ + '4.2 - Construct the id table at the end')
+	$$(_, 4.2, `Construct the id table at the end`)
 	parts.push(idList.map( id => id.toHex(2) ).join(''));
 
-	$$(_ + '4.3 - Prepare the arguments for auto-hook')
+	$$(_, 4.3, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		allocSize : listAddr + idList.length * 2,
@@ -282,7 +280,7 @@ RemoveBookingJobs = function()
 		isCall : true
 	};
 
-	$$(_ + '4.4 - Add our code and call it from callAddr')
+	$$(_, 4.4, `Add our code and call it from callAddr`)
 	AutoHook(callAddr, parts, args);
 
 	return true;

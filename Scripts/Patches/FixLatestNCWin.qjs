@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,27 +22,25 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-10-03                                             *
-*   Last Modified : 2021-10-23	                                           *
+*   Last Modified : 2023-08-26	                                           *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Makes the client use null ptr address for the bg and modifies the y value of UINewCharWnd ptr
 ///
-FixLatestNCWin = function()
+FixLatestNCWin = function(_)
 {
-	const _ = 'FixLatestNCWin : ';
-
-	$$(_ + '1.1 - Find the string reference')
+	$$(_, 1.1, `Find the string reference`)
 	let addr = Exe.FindHex( PUSH(this.BgAddr) + CALL()); //push <bg_back2 string>
 	                                                     //call func#1
 	if (addr < 0)
 		throw Error("Bg not used");
 
-	$$(_ + '1.2 - Change the pushed address')
+	$$(_, 1.2, `Change the pushed address`)
 	Exe.SetInt32(addr + 1, this.BgAddr - 1); //use 1 address less which will be pointing to NULL
 
-	$$(_ + '2.1 - Find the second reference')
+	$$(_, 2.1, `Find the second reference`)
 	let code =
 		PUSH(0x11)  //push 11h
 	+	PUSH(0x2C)  //push 2Ch
@@ -54,10 +52,10 @@ FixLatestNCWin = function()
 
 	addr += code.byteCount();
 
-	$$(_ + '2.2 - Extract the original function')
+	$$(_, 2.2, `Extract the original function`)
 	const origFunc = Exe.GetTgtAddr(addr);
 
-	$$(_ + '3.1 - Construct our function')
+	$$(_, 3.1, `Construct our function`)
 	code =
 		CMP(ECX, [Filler(1)])  //cmp ecx, dword ptr [prevAddr]
 	+	JE(Filler(2))          //je <origFunc>
@@ -68,7 +66,7 @@ FixLatestNCWin = function()
 	;
 	const allocSize = code.byteCount();
 
-	$$(_ + '3.2 - Prepare the arguments for auto-hook')
+	$$(_, 3.2, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		allocSize,
@@ -77,7 +75,7 @@ FixLatestNCWin = function()
 		isCall : true
 	};
 
-	$$(_ + '3.3 - Add our code and call it from addr')
+	$$(_, 3.3, `Add our code and call it from addr`)
 	AutoHook(addr - 1, code, args);
 
 	return true;

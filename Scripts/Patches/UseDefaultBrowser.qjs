@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 CH.C (jchcc)                                   *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2020-11-21                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 /// \brief Enforce usage of default browser using ShellExecuteA function
 ///       (after URL is parsed) instead of ROWebBrowser
 ///
-UseDefaultBrowser = function()
+UseDefaultBrowser = function(_)
 {
-	const _ = 'UseDefaultBrowser : ';
-
-	$$(_ + '1.1 - Find the location where client is parsing the <URL>')
+	$$(_, 1.1, `Find the location where client is parsing the URL`)
 	let code =
 		PUSH_EAX           //push eax
 	+	CALL(ESI)          //call esi ; atoi
@@ -47,7 +45,7 @@ UseDefaultBrowser = function()
 	if (addrs.isEmpty())
 		throw Error("Parsing not found");
 
-	$$(_ + '1.2 - Find location where client start parsing first argument of <URL>')
+	$$(_, 1.2, `Find location where client start parsing first argument of URL`)
 	const memLoc = [ROC.StkReg, ROC.HasFP ? WC : POS2WC];
 	code =
 		PUSH_0              //push 0
@@ -69,20 +67,20 @@ UseDefaultBrowser = function()
 
 	const [parseAddr, jmpAddr] = result;
 
-	$$(_ + '1.3 - Save original instruction for later use')
+	$$(_, 1.3, `Save original instruction for later use`)
 	const saveIns = Instr.FromAddr(jmpAddr);
 
-	$$(_ + '2.1 - Get SHELL32.ShellExecuteA address')
+	$$(_, 2.1, `Get SHELL32.ShellExecuteA address`)
 	const ShExec = Exe.FindFunc("ShellExecuteA", "SHELL32.dll");
 	if (ShExec < 0)
 		throw Error("ShellExecuteA not found");
 
-	$$(_ + '2.2 - Find \'open\' to use for lpOperation')
+	$$(_, 2.2, `Find the string 'open' to use for lpOperation`)
 	const OpenStr = Exe.FindText("open");
 	if (OpenStr < 0)
 		throw Error("'open' not found");
 
-	$$(_ + '2.3 - Construct the code for CALLing ShellExecuteA')
+	$$(_, 2.3, `Construct the code for CALLing ShellExecuteA`)
 	code =
 		PUSH_EAX         //push eax
 	+	MOV(EAX, [EAX])  //mov eax, dword ptr [eax]
@@ -98,13 +96,13 @@ UseDefaultBrowser = function()
 	+	RETN()           //retn
 	;
 
-	$$(_ + '2.4 - Add the code')
+	$$(_, 2.4, `Add the code`)
 	const [, freeVir] = Exe.AddHex(code, 0x10);
 
-	$$(_ + '2.5 - Create a CALL to the function from the MOV DWORD location')
+	$$(_, 2.5, `Create a CALL to the function from the MOV DWORD location`)
 	Exe.SetCALL(jmpAddr, freeVir, saveIns.Size - 5); //Extra NOPs at the end
 
-	$$(_ + '3.1 - Find offset where ROWebBrowser is CALLed')
+	$$(_, 3.1, `Find offset where ROWebBrowser is CALLed`)
 	switch (Exe.Version)
 	{
 		case 6: //VC6 &
@@ -140,7 +138,7 @@ UseDefaultBrowser = function()
 	if (rAddr < 0)
 		throw Error("ROWebBrowser pattern missing");
 
-	$$(_ + '3.2 - Find the destination when create ROWebBrowser failed after rAddr')
+	$$(_, 3.2, `Find the destination when create ROWebBrowser failed after rAddr`)
 	code =
 		MOV(ESI, EAX)  //mov esi, eax
 	+	TEST(ESI, ESI) //test esi,esi
@@ -151,10 +149,10 @@ UseDefaultBrowser = function()
 	if (addr < 0)
 		throw Error("ROWebBrowser test missing");
 
-	$$(_ + '3.3 - Get the JE target location')
+	$$(_, 3.3, `Get the JE target location`)
 	const tgtAddr = Exe.GetTgtAddr(addr + code.byteCount() - 1, VIRTUAL, 1);
 
-	$$(_ + '3.4 - Create a JMP from rAddr to the target')
+	$$(_, 3.4, `Create a JMP from rAddr to the target`)
 	Exe.SetJMP(rAddr, tgtAddr);
 
 	return true;

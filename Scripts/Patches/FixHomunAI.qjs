@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2021-06-14                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Bypass the homunculi target select checking
 ///
-FixHomunAI = function()
+FixHomunAI = function(_)
 {
-	const _ = 'FixHomunAI : ';
-
-	$$(_ + '1.1 - Find the homunculi\'s target select checker function')
+	$$(_, 1.1, `Find the homunculi's target select checker function`)
 	const isNewType = Exe.BuildDate > 20200715;
 
 	const disp = isNewType ? 0xE4 : 0xE0;
@@ -42,7 +40,7 @@ FixHomunAI = function()
 		FP_START              //push ebp
 		                      //mov ebp, esp
 	+	MOV(ECX, [ECX, disp]) //mov ecx, dword ptr [ecx + 0E0h] OR [ecx + 0E4h]
-	+	MOV(EAX, [ECX])       //mov eax, dword ptr [eax]
+	+	MOV(EAX, [ECX])       //mov eax, dword ptr [ecx]
 	+	CMP(EAX, ECX)         //cmp eax, dword ptr [ecx]
 	+	JE(WCp)               //je short _zero
 	+	MOV(EDX, [EBP, 8])    //mov edx, dword ptr [ARG.1]
@@ -73,10 +71,10 @@ FixHomunAI = function()
 	if (addr < 0)
 		throw Error("Checker function missing");
 
-	$$(_ + '1.2 - Change the XOR to MOV AL, 1 as well')
+	$$(_, 1.2, `Change the XOR to MOV AL, 1 as well`)
 	Exe.SetHex(addr + prefix.byteCount(), MOV(AL, 1));
 
-	$$(_ + '2.1 - Find the target cursor push for all targets')
+	$$(_, 2.1, `Find the target cursor push for all targets`)
 	prefix = PUSH_0.repeat(Exe.BuildDate >= 20191020 ? 9 : 4); // 9 x push 0 OR 4 x push 0 depending on the client date
 	suffix = PUSH(0x86); //push 86h
 
@@ -86,7 +84,7 @@ FixHomunAI = function()
 	if (addrs.isEmpty())
 		throw Error(`Expected exactly ${count} match for Cursor code`);
 
-	$$(_ + '2.2 - Enforce the conditional jump before it to skip it')
+	$$(_, 2.2, `Enforce the conditional jump before it to skip it`)
 	const pat = isNewType ? JNZ(WCp) : JZ(WCp); //newer clients have jnz
 	for (const memAddr of addrs)
 	{
@@ -104,4 +102,4 @@ FixHomunAI = function()
 /// \brief Disable for unsupported clients
 ///
 FixHomunAI.validate = () =>
-	Exe.BuildDate > 20170920;
+	Exe.BuildDate > 20170920 && Exe.BuildDate < 20210000;

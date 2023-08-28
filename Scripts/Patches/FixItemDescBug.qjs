@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Enforce the JMP after comparison with '[' to Fix Item Description Bug
 ///
-FixItemDescBug = function()
+FixItemDescBug = function(_)
 {
-	const _ = 'FixItemDescBug : ';
-
-	$$(_ + '1 - Find the pattern')
+	$$(_, 1, `Find the pattern`)
 	const code =
 		CMP(BYTE_PTR, [ESI], 0x5B)	//cmp byte ptr [ESI], 5Bh
 	+	JNE(0x31)					//jne short _skip
@@ -43,7 +41,7 @@ FixItemDescBug = function()
 	if (addr < 0)
 		Cancel("Client does not have the bug");
 
-	$$(_ + '2 - Enforce the JNE')
+	$$(_, 2, `Enforce the JNE`)
 	Exe.SetJMP(addr + code.byteCount() - 2);
 
     return true;

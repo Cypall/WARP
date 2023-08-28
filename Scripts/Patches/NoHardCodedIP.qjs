@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C)  2020-2021 CH.C (jchcc)                                  *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                  *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,25 +22,23 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Remove hardcoded HTTP service ip address (will set to zeros)
 ///
-NoHardCodedIP = function()
+NoHardCodedIP = function(_)
 {
-	const _ = 'NoHardCodedIP : ';
-
-	$$(_ + '1 - Construct all the hardcoded ip addresses')
+	$$(_, 1, `Construct all the hardcoded ip addresses`)
 	const ipAddrs = [
 		"http://112.175.128.140:3000",
 		"http://112.175.128.30:3000",
 		"http://192.168.5.54:3000"
 	];
 
-	$$(_ + '2 - Find all instances and replace with 0.0.0.0')
+	$$(_, 2, `Find all instances and replace with 0.0.0.0`)
 	const found = ipAddrs.filter( ip =>
 	{
 		const addrs = Exe.FindTextN(ip, PHYSICAL, true, false);

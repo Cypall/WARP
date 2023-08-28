@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Replace the arguments being used for sending OTP
 ///
-NoLoginOTP = function()
+NoLoginOTP = function(_)
 {
-	const _ = 'NoLoginOTP : ';
-
-	$$(_ + '1 - Find the code inside UILoginWnd::SendMsg')
+	$$(_, 1, `Find the code inside UILoginWnd::SendMsg`)
 	const code =
 		PUSH(0x26)			//push 26h
 	+	PUSH(0x2735)		//push 2735h
@@ -47,7 +45,7 @@ NoLoginOTP = function()
 	// const CMode_SendMsgOffset = [23, 1]
 	// logField("CMode_vtable::SendMsg", addr, CMode_SendMsgOffset)
 
-	$$(_ + '2 - Change parameter to make client send original login packet instead')
+	$$(_, 2, `Change parameter to make client send original login packet instead`)
 	Exe.SetUint8(addr + 1, 0);       //replace 26h with 0
 	Exe.SetUint32(addr + 3, 0x2710); //replace 2735h with 2710h
 

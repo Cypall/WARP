@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2015-2021 Neo-Mind                                       *
+*   Copyright (C) 2015-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -34,24 +34,22 @@
 ///        For the first 7, Zero out the first match amongst the suffix arg specific
 ///        For the remaining, Change the specified prefix assignment in the UIBasicWnd::OnCreate function to use the ending NULL instead
 ///
-HideOldButtons = function()
+HideOldButtons = function(_)
 {
-	const _ = 'HideOldButtons : ';
-
-	$$(_ + '1 - Get the user\'s selection of buttons to hide')
+	$$(_, 1, `Get the user's selection of buttons to hide`)
 	const selection = Exe.GetUserInput('$hiddenButtons', D_MultiChoice, "Hide Buttons", "Choose the buttons to be hidden", [], {choices: this.Keys});
 	if (selection === false || selection.isEmpty())
 		Cancel("No buttons hidden");
 
-	$$(_ + '2 - Iterate and zero out each button (depending on zeroPrefix)')
+	$$(_, 2, `Iterate and zero out each button (depending on zeroPrefix)`)
 	for (const key of selection)
 	{
-		$$(_ + `2.1 - Extract the essential data for ${key}`)
+		$$(_, 2.1, `Extract the essential data for ${key}`)
 		const data = this.Data.get(key);
 
 		if (!data.zeroPrefix)
 		{
-			$$(_ + '2.2 - If there is no zero prefix then we can simply zero it out (i.e. string itself can be manipulated)')
+			$$(_, 2.2, `If there is no zero prefix then we can simply zero it out (i.e. string itself can be manipulated)`)
 			Exe.SetInt8(data.strPhy, 0);
 		}
 		else
@@ -63,14 +61,14 @@ HideOldButtons = function()
 
 			if (!CACHE.has('HOB_AssignSkill'))
 			{
-				$$(_ + '2.3 - Find \'skill\' (needed since some prefixes are matching multiple areas)')
+				$$(_, 2.3, `Find the string 'skill' (needed since some prefixes are matching multiple areas)`)
 				const refAddr = Exe.FindText("skill");
 				if (refAddr < 0)
 					throw Error("'skill' not found");
 
 				const refHex = refAddr.toHex();
 
-				$$(_ + '2.4 - Find where \'skill\' is assigned (inside UIBasicWnd::OnCreate)')
+				$$(_, 2.4, `Find where 'skill' is assigned (inside UIBasicWnd::OnCreate)`)
 				let code = MOV([]); //mov dword ptr
 				let addr = Exe.FindHex(refHex + code);
 
@@ -82,22 +80,22 @@ HideOldButtons = function()
 				if (addr < 0)
 					throw Error("'skill' not assigned");
 
-				$$(_ + '2.5 - Save the address of the \'skill\' assignment & the code used as prefix')
+				$$(_, 2.5, `Save the address of the 'skill' assignment & the code used as prefix`)
 				CACHE.put('HOB_AssignSkill', addr);
 				CACHE.put('HOB_Prefix', code);
 			}
 
-			$$(_ + '2.6 - Extract the Virtual address of the prefix')
+			$$(_, 2.6, `Extract the Virtual address of the prefix`)
 			const {strings, strVir} = this.Data.get(key);
 
-			$$(_ + '2.7 - Find the prefix assignment after \'skill\' assignment')
+			$$(_, 2.7, `Find the prefix assignment after 'skill' assignment`)
 			const str = strings[0];
 			const HOB_AssignSkill = CACHE.get('HOB_AssignSkill');
 			const addr = Exe.FindHex(strVir.toHex() + CACHE.get('HOB_Prefix'), HOB_AssignSkill - 0x80, HOB_AssignSkill + (Exe.BuildDate > 20140210 ? 0x200 : 0x50));
 			if (addr < 0)
 				throw Error(`'${str}' not assigned`);
 
-			$$(_ + '2.8 - Change the address to point to the ending NULL')
+			$$(_, 2.8, `Change the address to point to the ending NULL`)
 			///       (Not the ideal way to fix since it still flags missing file errors)
 			Exe.SetInt32(addr, strVir + str.length);
 		}
@@ -112,33 +110,33 @@ HideOldButtons = function()
 ///
 HideOldButtons.validate = function(patchName)
 {
-	const _ = `${patchName}.validate : `;
+	const _ = `${patchName}.validate`;
 
-	$$(_ + '1.1 - Ensure the client is infact using the older style of buttons')
+	$$(_, 1.1, `Ensure the client is infact using the older style of buttons`)
 	if (Exe.BuildDate > 20170000)
 		return false;
 
-	$$(_ + '2 - Iterate and test for string existence and keep the keys only for valid ones')
+	$$(_, 2, `Iterate and test for string existence and keep the keys only for valid ones`)
 	this.Keys = [];
 
 	for (const [key, data] of this.Data)
 	{
-		$$(_ + '2.1 - Quest is only valid for 2010+')
+		$$(_, 2.1, `Quest is only valid for 2010+`)
 		if (!ROC.Post2010 && key === "Quest")
 			return false;
 
-		$$(_ + '2.2 - Find the first match amongst the strings specified for ' + key)
+		$$(_, 2.2, `Find the first match amongst the strings specified for ${key}`)
 		for (const str of data.strings)
 		{
 			const addr = Exe.FindText(str, PHYSICAL, data.zeroPrefix);
 			if (addr > 0)
 			{
-				$$(_ + '2.4 - When found save it into HOB_Data . Also save the VIRTUAL address if zeroPrefix is ON since we need it')
+				$$(_, 2.4, `When found save it into HOB_Data . Also save the VIRTUAL address if zeroPrefix is ON since we need it`)
 				data.strPhy = addr;
 				if (data.zeroPrefix)
 					data.strVir = Exe.Phy2Vir(addr);
 
-				$$(_ + '2.5 - Push the key into the list')
+				$$(_, 2.5, `Push the key into the list`)
 				this.Keys.push(key);
 
 				break;
@@ -146,7 +144,7 @@ HideOldButtons.validate = function(patchName)
 		}
 	}
 
-	$$(_ + '3 - Patch is valid if atleast 1 button is present')
+	$$(_, 3, `Patch is valid if atleast 1 button is present`)
 	return !(this.Keys.isEmpty());
 };
 

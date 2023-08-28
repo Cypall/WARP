@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2021 Neo Mind                                       *
+*   Copyright (C) 2013-2023 Neo Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,21 +23,19 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Change conditional jump to JMP after Langtype comparison inside DataTxtDecode function
 ///
-PlainTextDesc = function()
+PlainTextDesc = function(_)
 {
-	const _ = 'PlainTextDesc : ';
-
-	$$(_ + '1 - Ensure the LANGTYPE is loaded')
+	$$(_, 1, `Ensure the LANGTYPE is loaded`)
 	LANGTYPE.load();
 
-	$$(_ + '2 - Find the Langtype comparison in DataTxtDecode function')
+	$$(_, 2, `Find the Langtype comparison in DataTxtDecode function`)
 	let prefix, suffix;
 	if (Exe.Version === 6)//VC6
 	{
@@ -95,7 +93,7 @@ PlainTextDesc = function()
 	if (addr < 0)
 		throw Error("Langtype comparison missing");
 
-	$$(_ + '3 - Change the conditional jump')
+	$$(_, 3, `Change the conditional jump`)
 	Exe.SetJMP(addr + prefix.byteCount() - 2);
 
 	return true;

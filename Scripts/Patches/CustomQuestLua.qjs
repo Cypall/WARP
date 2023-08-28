@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2014-2021 Neo-Mind                                       *
+*   Copyright (C) 2014-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,26 +22,24 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Hijack Quest_function lua file loading to load lua files specified in the input file first before loading Quest_function
 ///
-CustomQuestLua = function()
+CustomQuestLua = function(_)
 {
-	const _ = 'CustomQuestLua : ';
-
-	$$(_ + '1.1 - Ensure LUA object is loaded')
+	$$(_, 1.1, `Ensure LUA object is loaded`)
 	LUA.load();
 
-	$$(_ + '1.2 - Get the list file with the quest file names')
+	$$(_, 1.2, `Get the list file with the quest file names`)
 	const inFile = Exe.GetUserInput('$inpQuest', D_InFile, "Quest Lua List", "Enter the listing file", "Inputs/QuestLuaList.yml", {filters: YMLFILTER});
 	if (inFile === false)
 		Cancel("No listing file specified");
 
-	$$(_ + '2.1 - Load the list')
+	$$(_, 2.1, `Load the list`)
 	const LuaFiles = Warp.LoadYaml(inFile);
 	if (LuaFiles === false)
 		return false
@@ -52,7 +50,7 @@ CustomQuestLua = function()
 	if (LuaFiles.isEmpty())
 		Cancel("Empty list provided");
 
-	$$(_ + '2.2 - Inject the loading procedure for all the files specified')
+	$$(_, 2.2, `Inject the loading procedure for all the files specified`)
 	LUA.addLoaders(LuaFiles, this.Prefix + "Quest_function");
 
 	return true;

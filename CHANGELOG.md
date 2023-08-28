@@ -1,3 +1,116 @@
+# 2023-08-27 Changes
+
+## Common Updates
+- Updated Copyright year in all the files.
+
+## Script Updates
+- Updated **`$$`** function to accept 3 arguments to show as `arg1 : arg2 - arg3`.
+
+  Also fixed angled brackets not being displayed in console.
+
+
+# 2022-12-30 Changes
+
+## Patch Updates
+- Fixed bug in [Enforce 0 C in Cash Shop](https://github.com/Neo-Mind/WARP/issues/115) patch.
+
+- Updated valid build dates for [Fix Homunculi AI](https://github.com/Neo-Mind/WARP/issues/93) patch.
+
+- Fixed bug in [Increase Headgear View ID](https://discord.com/channels/780647066871136266/1051858994584633404) patch.
+
+
+# 2022-10-05 Changes
+
+## Patch Updates
+- Updated Restore App Icon & Customize App icon patches.
+
+	- Restore enables the new bigger icon in latest clients.
+	
+	- Custom icon has no limits now aside from anything Windows imposes.
+
+## Extension Updates
+- Fixed **`DumpImportTable`** extension for certain clients where LUT address is set as 0.
+
+## Script Updates
+- Updated **`RsrcEntry`** class with better traverse function & a dump function to report the hierarchy.
+
+## Tool Updates
+- Fixed minor bugs in GATE (similar issue as **`DumpImportTable`**)
+
+
+# 2022-09-24 Changes
+
+## Patch Updates
+- Updated Chris' lua override patch to work with a mapping file and work properly on more recent clients.
+
+## Script Updates
+- Added **`LUA.loadLuaAfter`** function to support the branched loading in recent clients (used by `AddLuaOverrides` patch)
+
+
+# 2022-09-24 Changes
+
+## Patch Updates
+- Added new module for capturing session value & related functions
+
+- Added new patches to
+
+	- Enable preview for equipments in Trader cash shops. Requires 2017+ clients.
+	
+	- Customize guild emblem file size.
+	
+	- Customize error message displayed when client runs without launcher.
+	
+	- Customize tax value used for mail (Rodex)
+	
+- Adapted some patches for latest clients (more to come soon).
+
+- Updated copyright date for a few patches (more to be updated soon).
+
+
+# 2022-09-08 Changes
+
+## Patch Updates
+- Updated [Skill spam patch for newer clients](https://github.com/Neo-Mind/WARP/issues/102).
+
+- Updated copyrights for all patch definition yml files.
+
+- Updated [Disable Gameguard patch for 2022 clients](https://github.com/Neo-Mind/WARP/issues/95)
+
+
+# 2022-09-06 Changes
+
+## Patch Updates
+- Fixed [bug with Custom Captcha decompression patch](https://github.com/Neo-Mind/WARP/issues/103)
+
+
+# 2022-08-24 Changes
+
+## Extension Updates
+- Updated **`Extract msgstringtable`** extension for latest client.
+
+
+# 2022-08-23 Changes
+
+## Patch Updates
+- Fixed [crashes with Custom Shield patch](https://github.com/Neo-Mind/WARP/issues/97)
+
+- Fixed [crashes with Custom Font Height patches](https://github.com/Neo-Mind/WARP/issues/92)
+
+- Added patch to [Disable password encryption in login packet for new clients](https://github.com/Neo-Mind/WARP/issues/94)
+
+- Fixed [conflict in Shared head palette patches](https://github.com/Neo-Mind/WARP/issues/84)
+
+- Updated Lua files for Custom Job patch with [missing entries for new jobs](https://github.com/Neo-Mind/WARP/issues/98)
+  and [correct mappings for doram race](https://github.com/Neo-Mind/WARP/issues/96)
+  
+- Partially fixed Gameguard patch. Still needs more work. 
+
+- Removed unnecessary parseInt calls from scripts.
+
+## Script Updates
+- Updated **`ReloadPatch`** function to return the value of the called patch function.
+
+
 # 2022-04-03 Changes
 
 ## Patch Updates

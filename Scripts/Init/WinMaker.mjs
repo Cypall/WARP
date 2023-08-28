@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-10-01                                             *
-*   Last Modified : 2021-10-31                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -73,10 +73,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -85,13 +85,13 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false')
+	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
 
-	$$(_ + '2.1 - Get the CreateWindowExA function')
+	$$(_, 2.1, `Get the CreateWindowExA function`)
 	ROC.findImports();
 
-	$$(_ + '2.2 - Find the location where the client window gets created')
+	$$(_, 2.2, `Find the location where the client window gets created`)
 	const code = PUSH(" 00 00 C? 02");
 	let addr = Exe.FindHexN( CALL([ROC.CreateWin]) ).find( addr =>
 	{
@@ -101,18 +101,18 @@ export function load()
 	if (addr == undefined)
 		throw Log.rise(Error = new Error("Window creation CALL missing"));
 
-	$$(_ + '2.3 - Save the address')
+	$$(_, 2.3, `Save the address`)
 	HookAddr = addr;
 
-	$$(_ + '2.4 - Find the assignment of the CALL result')
+	$$(_, 2.4, `Find the assignment of the CALL result`)
 	addr = Exe.FindHex(MOV([POS4WC], EAX), addr, addr + 16);
 	if (addr < 0)
 		throw Log.rise(Error = new Error("Result Assignment missing"));
 	
-	$$(_ + '2.5 - Save the location')
+	$$(_, 2.5, `Save the location`)
 	WndAddr = Exe.GetInt32(addr + 1);
 	
-	$$(_ + '2.6 - Set validity to true')
+	$$(_, 2.6, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 
@@ -159,22 +159,22 @@ export function unstage(patchName)
 ///
 function setup()
 {
-	const _ = self + '::setup : ';
+	const _ = self + ' :: setup : ';
 
-	$$(_ + '1.1 - Merge the codes')
+	$$(_, 1.1, `Merge the codes`)
 	let parts = [];
 	for (const [, code] of Codes)
 		parts.push(code);
 
 	parts.push( JMP([ROC.CreateWin]) );
 
-	$$(_ + '1.2 - Start the tag')
+	$$(_, 1.2, `Start the tag`)
 	Exe.BeginTag("New_Win_Maker", true);
 
-	$$(_ + '1.3 - Allocate space for it')
+	$$(_, 1.3, `Allocate space for it`)
 	const [free, freeVir] = Exe.Allocate(parts.byteCount());
 
-	$$(_ + '2.1 - Fill in respective blanks if any')
+	$$(_, 2.1, `Fill in respective blanks if any`)
 	const offsets = MapAddrs(freeVir, parts);
 
 	let i = 0;
@@ -197,9 +197,9 @@ function setup()
 		i++;
 	}
 
-	$$(_ + '2.2 - Add at allocated space')
+	$$(_, 2.2, `Add at allocated space`)
 	Exe.SetHex(free, parts.join(''));
 
-	$$(_ + '2.3 - Update the CALL')
+	$$(_, 2.3, `Update the CALL`)
 	Exe.SetCALL(HookAddr, freeVir, 1);
 }
