@@ -1,3 +1,35 @@
+# 2023-08-27 Changes
+
+## Common Updates
+- Updated Copyright year in all the files.
+
+## Script Updates
+- Updated **`$$`** function to accept 3 arguments to show as `arg1 : arg2 - arg3`.
+
+  Also fixed angled brackets not being displayed in console.
+
+
+# 2022-10-05 Changes
+
+## Script Updates
+- Updated **`RsrcEntry`** class with better traverse function & a dump function to report the hierarchy.
+
+## Tool Updates
+- Fixed minor bugs in GATE (similar issue as **`DumpImportTable`**)
+
+
+# 2022-09-24 Changes
+
+## Script Updates
+- Added **`LUA.loadLuaAfter`** function to support the branched loading in recent clients (used by `AddLuaOverrides` patch)
+
+
+# 2022-08-23 Changes
+
+## Script Updates
+- Updated **`ReloadPatch`** function to return the value of the called patch function.
+
+
 # 2022-04-03 Changes
 
 ## Script Updates

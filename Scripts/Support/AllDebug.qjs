@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-12-11                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,14 +31,20 @@
 ///
 /// \brief Function for logging comments in patch & extension functions (including supporting functions) and console if requested
 ///
-$$ = txt =>
+$$ = (pre, ver, msg) =>
 {
+	const txt =
+		ver == undefined ? pre :
+		msg == undefined ? pre + ' : ' + ver
+		                 : pre + ' : ' + ver + ' - ' + msg
+	;
+	
 	if (txt != undefined && Log.valid())
 	{
 		Log.write(txt);
 
 		if (Log.Tee)
-			console.info(txt);
+			console.info(txt.replace(/</g, "&lt;"));
 
 		return true;
 	}
@@ -49,12 +55,18 @@ $$ = txt =>
 ///
 /// \brief Same as above but always reports to console as well
 ///
-$$$ = txt =>
+$$$ = (pre, ver, msg) =>
 {
+	const txt =
+		ver == undefined ? pre :
+		msg == undefined ? pre + ' : ' + ver
+		                 : pre + ' : ' + ver + ' - ' + msg
+	;
+	
 	if (txt != undefined && Log.valid())
 	{
 		Log.write(txt);
-		console.info(txt);
+		console.info(txt.replace(/</g, "&lt;"));
 
 		return true;
 	}
