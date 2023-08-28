@@ -1,6 +1,6 @@
 ############################################################################
 #                                                                          #
-#   Copyright (C) ?-2021 *Various authors*                                 #
+#   Copyright (C) ?-2023 *Various authors*                                 #
 #                                                                          #
 #   This file is a part of WARP project (specific to RO clients)           #
 #                                                                          #
@@ -22,7 +22,7 @@
 #                                                                          #
 #   Author(s)     : Neo-Mind                                               #
 #   Created Date  : 2020-08-26                                             #
-#   Last Modified : 2021-10-01                                             #
+#   Last Modified : 2022-09-24                                             #
 #                                                                          #
 ############################################################################
 
@@ -32,6 +32,18 @@ CustomUI:
     color : orangered
     
     patches:
+        - AllowShortcutsInWine:
+            title : Allow shortcuts in WINE [Experimental]
+            recommend : no
+            author : Andrei Karas (4144)
+            desc : Allows usage of keyboard shortcuts in wine. Still experimental, so it may or may not work at this time.
+        
+        - CustomMissingLauncherMsg:
+            title : Customize missing launcher message
+            recommend : no
+            author : Neo-Mind
+            desc : Allows changing the blank message to user specified string when the client runs without a launcher.
+        
         - TildeForMatk:
             title : Use Tilde for Matk
             recommend : no

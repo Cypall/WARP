@@ -1,7 +1,7 @@
 --[[
 ****************************************************************************
 *                                                                          *
-*   Copyright (C) 2021-2022 Neo-Mind                                       *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,18 +23,18 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-03-21                                             *
-*   Last Modified : 2022-02-22                                             *
+*   Last Modified : 2022-08-23                                             *
 *                                                                          *
 ****************************************************************************
 ]]--
 
 --[[
 
-(¯`·¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸·´¯)
+(ï¿½`ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½ï¿½ï¿½)
 ( \                                                    / )
  ( ) Default set of prefixes used for weapons/shields ( )
   (/                                                  \)
-   (.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`)
+   (.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`)
 
 ]]--
 
@@ -51,40 +51,40 @@ PCHands =
 	-----------------
 	-- 1st Classes --
 	-----------------
-	[PCIds.NOVICE]   = "ÃÊº¸ÀÚ\\ÃÊº¸ÀÚ",
-	[PCIds.SWORDMAN] = "°Ë»ç\\°Ë»ç",
-	[PCIds.MAGICIAN] = "¸¶¹ý»ç\\¸¶¹ý»ç",
-	[PCIds.ARCHER]   = "±Ã¼ö\\±Ã¼ö",
-	[PCIds.ACOLYTE]  = "¼ºÁ÷ÀÚ\\¼ºÁ÷ÀÚ",
-	[PCIds.MERCHANT] = "»óÀÎ\\»óÀÎ",
-	[PCIds.THIEF]    = "µµµÏ\\µµµÏ",
+	[PCIds.NOVICE]   = "ï¿½Êºï¿½ï¿½ï¿½\\ï¿½Êºï¿½ï¿½ï¿½",
+	[PCIds.SWORDMAN] = "ï¿½Ë»ï¿½\\ï¿½Ë»ï¿½",
+	[PCIds.MAGICIAN] = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.ARCHER]   = "ï¿½Ã¼ï¿½\\ï¿½Ã¼ï¿½",
+	[PCIds.ACOLYTE]  = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.MERCHANT] = "ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.THIEF]    = "ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½",
 
 	--------------------------
 	-- Extended 1st Classes --
 	--------------------------
-	[PCIds.GUNSLINGER]   = "°Ç³Ê\\°Ç³Ê",
-	[PCIds.NINJA]        = "´ÑÀÚ\\´ÑÀÚ",
-	[PCIds.TAEKWON]      = "ÅÂ±Ç¼Ò³â\\ÅÂ±Ç¼Ò³â",
+	[PCIds.GUNSLINGER]   = "ï¿½Ç³ï¿½\\ï¿½Ç³ï¿½",
+	[PCIds.NINJA]        = "ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.TAEKWON]      = "ï¿½Â±Ç¼Ò³ï¿½\\ï¿½Â±Ç¼Ò³ï¿½",
 
 	-----------------
 	-- 2nd Classes --
 	-----------------
-	[PCIds.KNIGHT]       = "±â»ç\\±â»ç",
-	[PCIds.KNIGHT_MOUNT] = "ÆäÄÚÆäÄÚ_±â»ç\\ÆäÄÚÆäÄÚ_±â»ç",
-	[PCIds.PRIEST]       = "ÇÁ¸®½ºÆ®\\ÇÁ¸®½ºÆ®",
-	[PCIds.WIZARD]       = "À§Àúµå\\À§Àúµå",
-	[PCIds.BLACKSMITH]   = "Á¦Ã¶°ø\\Á¦Ã¶°ø",
-	[PCIds.HUNTER]       = "ÇåÅÍ\\ÇåÅÍ",
-	[PCIds.ASSASSIN]     = "¾î¼¼½Å\\¾î¼¼½Å",
+	[PCIds.KNIGHT]       = "ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½",
+	[PCIds.KNIGHT_MOUNT] = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½",
+	[PCIds.PRIEST]       = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®",
+	[PCIds.WIZARD]       = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.BLACKSMITH]   = "ï¿½ï¿½Ã¶ï¿½ï¿½\\ï¿½ï¿½Ã¶ï¿½ï¿½",
+	[PCIds.HUNTER]       = "ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.ASSASSIN]     = "ï¿½î¼¼ï¿½ï¿½\\ï¿½î¼¼ï¿½ï¿½",
 
-	[PCIds.CRUSADER]     = "Å©·ç¼¼ÀÌ´õ\\Å©·ç¼¼ÀÌ´õ",
-	[PCIds.CRUS_MOUNT]   = "½ÅÆäÄÚÅ©·ç¼¼ÀÌ´õ\\½ÅÆäÄÚÅ©·ç¼¼ÀÌ´õ",
-	[PCIds.MONK]         = "¸ùÅ©\\¸ùÅ©",
-	[PCIds.SAGE]         = "¼¼ÀÌÁö\\¼¼ÀÌÁö",
-	[PCIds.ROGUE]        = "·Î±×\\·Î±×",
-	[PCIds.ALCHEMIST]    = "¿¬±Ý¼ú»ç\\¿¬±Ý¼ú»ç",
-	[PCIds.BARD]         = "¹Ùµå\\¹Ùµå",
-	[PCIds.DANCER]       = "¹«Èñ\\¹«Èñ",
+	[PCIds.CRUSADER]     = "Å©ï¿½ç¼¼ï¿½Ì´ï¿½\\Å©ï¿½ç¼¼ï¿½Ì´ï¿½",
+	[PCIds.CRUS_MOUNT]   = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å©ï¿½ç¼¼ï¿½Ì´ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å©ï¿½ç¼¼ï¿½Ì´ï¿½",
+	[PCIds.MONK]         = "ï¿½ï¿½Å©\\ï¿½ï¿½Å©",
+	[PCIds.SAGE]         = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.ROGUE]        = "ï¿½Î±ï¿½\\ï¿½Î±ï¿½",
+	[PCIds.ALCHEMIST]    = "ï¿½ï¿½ï¿½Ý¼ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½Ý¼ï¿½ï¿½ï¿½",
+	[PCIds.BARD]         = "ï¿½Ùµï¿½\\ï¿½Ùµï¿½",
+	[PCIds.DANCER]       = "ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½",
 
 	--------------------------
 	-- Extended 2nd Classes --
@@ -97,16 +97,16 @@ PCHands =
 	-----------------
 	-- 3rd Classes --
 	-----------------
-	[PCIds.RANGER_MOUNT]   = "·¹ÀÎÁ®´Á´ë\\·¹ÀÎÁ®´Á´ë",
-	[PCIds.MADOGEAR]       = "¸¶µµ±â¾î\\¸¶µµ±â¾î",
-	
+	[PCIds.RANGER_MOUNT]   = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+	[PCIds.MADOGEAR]       = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+
 	--------------------------
 	-- Extended 3rd Classes --
 	--------------------------
 	[PCIds.NIGHT_WATCH]    = "NIGHT_WATCH\\NIGHT_WATCH",
 	[PCIds.SHINKIRO]       = "SHINKIRO\\SHINKIRO",
 	[PCIds.SHIRANUI]       = "SHIRANUI\\SHIRANUI",
-	
+
 	-----------------
 	-- 4th Classes --
 	-----------------
@@ -126,31 +126,29 @@ PCHands =
 	[PCIds.INQUISITOR]      = "INQUISITOR\\INQUISITOR",
 	[PCIds.TROUBADOUR]      = "TROUBADOUR\\TROUBADOUR",
 	[PCIds.TROUVERE]        = "TROUVERE\\TROUVERE",
-	
+
 	--------------------------
 	-- Extended 4th Classes --
 	--------------------------
 	[PCIds.SKY_EMPEROR]   = "SKY_EMPEROR\\SKY_EMPEROR",
 	[PCIds.SKY_EMPEROR_F] = "SKY_EMPEROR\\SKY_EMPEROR2",
 	[PCIds.SOUL_ASCETIC]  = "SOUL_ASCETIC\\SOUL_ASCETIC",
-	
+
 	--------------
 	-- Costumes --
 	--------------
-	[PCIds.MARRIED]    = "°áÈ¥\\°áÈ¥",
+	[PCIds.MARRIED]    = "ï¿½ï¿½È¥\\ï¿½ï¿½È¥",
 
 	-----------------------
 	-- Doram 1st Classes --
 	-----------------------
 	[PCIds.SUMMONER]   = "summoner\\summoner",
-	[PCIds.SUMM_MOUNT] = "summoner\\cart_summoner",
 
 	-----------------------
 	-- Doram 2nd Classes --
 	-----------------------
 	[PCIds.SPIRIT_HANDLER]   = "SPIRIT_HANDLER\\SPIRIT_HANDLER",
-	[PCIds.SP_HANDLER_MOUNT] = "SPIRIT_HANDLER\\SPIRIT_HANDLER_RIDING",
-	
+
 	--[[
 	 __  __   ___   _   _  _  _  _____     ___  ___   ___
 	|  \/  | / _ \ | | | || \| ||_   _|   |_ _||   \ / __|
@@ -158,19 +156,19 @@ PCHands =
 	|_|  |_| \___/  \___/ |_|\_|  |_|     |___||___/ |___/
 
 	]]--
-	
+
 	--------------------------
 	-- Extended 2nd Classes --
 	--------------------------
 	[PCMounts.PORING_H_NOVICE]     = "HYPER_NOVICE\\HYPER_NOVICE_RIDING",
-	
+
 	--------------------------
 	-- Extended 3rd Classes --
 	--------------------------
 	[PCMounts.BIKE_NIGHT_WATCH]    = "NIGHT_WATCH\\NIGHT_WATCH_RIDING",
 	[PCMounts.FROG_SHINKIRO]       = "SHINKIRO\\SHINKIRO_RIDING",
 	[PCMounts.FROG_SHIRANUI]       = "SHIRANUI\\SHIRANUI_RIDING",
-	
+
 	-----------------
 	-- 4th Classes --
 	-----------------
@@ -186,21 +184,31 @@ PCHands =
 	[PCMounts.SHEEP_INQUISITOR]     = "INQUISITOR\\INQUISITOR_RIDING",
 	[PCMounts.OSTRICH_TROUBADOUR]   = "TROUBADOUR\\TROUBADOUR_RIDING",
 	[PCMounts.OSTRICH_TROUVERE]     = "TROUVERE\\TROUVERE_RIDING",
-	
+
 	--------------------------
 	-- Extended 4th Classes --
 	--------------------------
 	[PCMounts.HAETAE_SKY_EMPEROR]   = "SKY_EMPEROR\\SKY_EMPEROR_RIDING",
 	[PCMounts.HAETAE_SOUL_ASCETIC]  = "SOUL_ASCETIC\\SOUL_ASCETIC_RIDING",
+
+	-----------------------
+	-- Doram 1st Classes --
+	-----------------------
+	[PCMounts.SUMM_MOUNT] = "summoner\\cart_summoner",
+
+	-----------------------
+	-- Doram 2nd Classes --
+	-----------------------
+	[PCMounts.SP_HANDLER_MOUNT] = "SPIRIT_HANDLER\\SPIRIT_HANDLER_RIDING",
 }
 
 --[[
 
-(¯`·¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯)
+(ï¿½`ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½)
 ( \                                                      / )
  ( ) Inheritance table for mapping ids with same prefix ( )
   (/                                                    \)
-   (.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.¸¸.·´¯`·.)
+   (.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.ï¿½ï¿½.ï¿½ï¿½ï¿½`ï¿½.)
 
 ]]--
 
@@ -399,7 +407,7 @@ PCHandInheritTbl =
 	-----------------
 	[PCIds.ARCH_MAGE]       = PCIds.WIZARD,
 	[PCIds.ELEMENT_MASTER]  = PCIds.SAGE,
-	
+
 	--------------
 	-- Costumes --
 	--------------
@@ -420,7 +428,6 @@ PCHandInheritTbl =
 	-- Baby Doram Classes --
 	------------------------
 	[PCIds.SUMMONER_B]   = PCIds.SUMMONER,
-	[PCIds.SUMM_MOUNT_B] = PCIds.SUMM_MOUNT,
 
 	--[[
 	 __  __   ___   _   _  _  _  _____     ___  ___   ___
@@ -606,4 +613,9 @@ PCHandInheritTbl =
 	-----------------
 	[PCMounts.FOX_ARCH_MAGE]        = PCIds.WIZARD,
 	[PCMounts.FOX_ELEMENT_MASTER]   = PCIds.SAGE,
+
+	------------------------
+	-- Baby Doram Classes --
+	------------------------
+	[PCMounts.SUMM_MOUNT_B] = PCMounts.SUMM_MOUNT,
 }
