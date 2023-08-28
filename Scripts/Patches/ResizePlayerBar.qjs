@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc), Neo-Mind                         *
+*   Copyright (C) 2020-2023 CH.C (jchcc), Neo-Mind                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-08-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -32,11 +32,9 @@
 ///
 /// \brief Changes the dimensions being PUSHed for creating Player's HP/SP Bar
 ///
-ResizePlayerBar = function()
+ResizePlayerBar = function(_)
 {
-	const _ = 'ResizePlayerBar : ';
-
-	$$(_ + '1.1 - Find the original size PUSHes')
+	$$(_, 1.1, `Find the original size PUSHes`)
 	let prefix =
 		MOV(ECX, [R32, POS2WC])  //mov ecx, dword ptr [regA + dispA]
 	+	PUSH(POS4WC)             //push immA
@@ -64,7 +62,7 @@ ResizePlayerBar = function()
 
 	const sizeAddr = addr + prefix.byteCount();
 
-	$$(_ + '1.2 - Find the reference assignment before the half width subtraction')
+	$$(_, 1.2, `Find the reference assignment before the half width subtraction`)
 	let addrs = Exe.FindHexN( 2, 2, MOV([EAX, WCp], 0x32FF32) ); //mov dword ptr [eax + disp8D], 32FF32h
 
 	if (addrs.isEmpty())
@@ -73,7 +71,7 @@ ResizePlayerBar = function()
 	if (addrs.isEmpty())
 		throw Error("Expected exactly 2 matches.");
 
-	$$(_ + '1.3 - Now find the subtraction after it. The pattern changes a lot between 2008 - 2019 so this is the only foolproof way')
+	$$(_, 1.3, `Now find the subtraction after it. The pattern changes a lot between 2008 - 2019 so this is the only foolproof way`)
 	const MovEAX = MOV(EAX, 0x88888889); //mov eax, 88888889h
 
 	const IsSub = this.isSub;
@@ -90,7 +88,7 @@ ResizePlayerBar = function()
 	if (!halfAddr)
 		throw Error("Half Width subtraction missing");
 
-	$$(_ + '2.1 - Get the new dimensions from user')
+	$$(_, 2.1, `Get the new dimensions from user`)
 	const result = Exe.GetUserInput('$pcHPBarSize', D_VecI8, "Player HP Bar Dimensions", "Enter the new HP bar size for Player (in pixels)", [60, 9], {
 		min: 1,
 		name0: "Bar Width",
@@ -101,7 +99,7 @@ ResizePlayerBar = function()
 
 	const [wid, hgt] = result;
 
-	$$(_ + '2.2 - Replace at all the locations')
+	$$(_, 2.2, `Replace at all the locations`)
 	if (wid !== 60)
 	{
 		Exe.SetInt8(sizeAddr + 3, wid);

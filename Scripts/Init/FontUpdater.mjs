@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-09-28                                             *
-*   Last Modified : 2021-10-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -69,10 +69,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -81,17 +81,17 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false')
+	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
 
-	$$(_ + '2.1 - Find the CreateFontA function')
+	$$(_, 2.1, `Find the CreateFontA function`)
 	let addr = Exe.FindFunc("CreateFontA", "GDI32.dll");
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - CreateFontA missing`));
 
 	CreateFontA = addr;
 
-	$$(_ + '2.2 - Find it\'s references')
+	$$(_, 2.2, `Find it's references`)
 	let addrs = Exe.FindHexN( CALL([CreateFontA]) );
 	if (addrs.isEmpty())
 		throw Log.rise(ErrMsg = new Error(`${self} - CreateFontA not called`));
@@ -102,7 +102,7 @@ export function load()
 
 	HookAddrs = addrs;
 
-	$$(_ + '2.3 - Set validity to true')
+	$$(_, 2.3, `Set validity to true`)
 	return Log.rise(Valid = true);
 }
 
@@ -144,9 +144,9 @@ export function unstage(patchName)
 ///
 function setup()
 {
-	const _ = `${self}.setup - `;
+	const _ = `${self}.setup`;
 
-	$$(_ + '1.1 - Prepare the code')
+	$$(_, 1.1, `Prepare the code`)
 	let parts = [];
 	if (CACHE.has('FONT_Height'))
 	{
@@ -187,7 +187,7 @@ function setup()
 			+	MOV(EAX, MaxHgt) //mov eax, <FONT_MaxHeight>
 			;
 		}
-		prefix = SetFillTargets(prefix, 1, {'1,1' : parts.byteCount()});
+		prefix = SetFillTargets(prefix, 1, {'1,1' : prefix.byteCount()});
 
 		parts.push(
 			prefix
@@ -255,20 +255,20 @@ function setup()
 		JMP([CreateFontA])                               //jmp dword ptr [<&GDI32.CreateFontA>]
 	);
 
-	$$(_ + '1.2 - Clean & begin the tag')
+	$$(_, 1.2, `Clean & begin the tag`)
 	Exe.BeginTag("Fontain", true);
 
-	$$(_ + '2.1 - Find space for the code')
+	$$(_, 2.1, `Find space for the code`)
 	const [free, freeVir] = Exe.Allocate(4 + parts.byteCount());
 
-	$$(_ + '2.2 - Add at allocated address')
+	$$(_, 2.2, `Add at allocated address`)
 	Exe.SetHex(free, (freeVir + 4).toHex() + parts.join(''));
 
-	$$(_ + '2.3 - Change the references')
+	$$(_, 2.3, `Change the references`)
 	for (const addr of HookAddrs)
 		Exe.SetInt32(addr + 2, freeVir);
 
-	$$(_ + '2.4 - End the tag')
+	$$(_, 2.4, `End the tag`)
 	Exe.EndTag();
 }
 

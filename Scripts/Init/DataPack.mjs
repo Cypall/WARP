@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2021-08-20                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -73,10 +73,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -85,20 +85,20 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false')
+	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
 
-	$$(_ + '1.4 - Find "data.grf" or "sdata.grf" for really old clients')
+	$$(_, 1.4, `Find the string 'data.grf' or 'sdata.grf' for really old clients`)
 	Name = ROC.Post2010 ? "data.grf" : "sdata.grf"
 	Addr = Exe.FindText(this.Name);
 
 	if (Addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'data.grf' not found`));
 
-	$$(_ + '1.5 - Convert to hex')
+	$$(_, 1.5, `Convert to hex`)
 	Hex = Addr.toHex();
 
-	$$(_ + '1.6 - Find where its used in a PUSH')
+	$$(_, 1.6, `Find where it is PUSHed`)
 	let addr2 = -1;
 	if (Exe.Version >= 14.0) //for VC14.16
 	{
@@ -112,7 +112,7 @@ export function load()
 		addr2 = Exe.FindHex(code);
 		if (addr2 > 0)
 		{
-			$$(_ + '2.1 - Save the Reference addr2ess (where the PUSH occurs in VC14.16) & extract the g_FileMgr MOV before it')
+			$$(_, 2.1, `Save the Reference address (where the PUSH occurs in VC14.16) & extract the g_FileMgr MOV before it`)
 			RefAddr = addr2 + code.byteCount() - 5;
 			MovFMgr = Exe.GetHex(addr2, 5);
 		}
@@ -128,12 +128,12 @@ export function load()
 		if (addr2 < 0)
 			throw Log.rise(ErrMsg = new Error(`${self} - 'data.grf' not used`));
 
-		$$(_ + '2.2 - Save the Reference addr2ess (where the PUSH occurs in older clients) & extract the g_FileMgr MOV after it')
+		$$(_, 2.2, `Save the Reference address (where the PUSH occurs in older clients) & extract the g_FileMgr MOV after it`)
 		RefAddr = addr2;
 		MovFMgr = Exe.GetHex(addr2 + 5, 5);
 	}
 
-	$$(_ + '2.3 - Set validity to true')
+	$$(_, 2.3, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 

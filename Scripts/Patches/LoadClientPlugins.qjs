@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2017-2021 Secret                                         *
+*   Copyright (C) 2017-2023 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,28 +22,26 @@
 *                                                                          *
 *   Author(s)     : Secret                                                 *
 *   Created Date  : 2021-01-14                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief NOP out the conditional jump preventing plugins from loading inside InitMSS function.
 ///
-LoadClientPlugins = function()
+LoadClientPlugins = function(_)
 {
-	const _ = 'LoadClientPlugins : ';
-
-	$$(_ + '1.1 - Find \'SOUNDMODE\'')
+	$$(_, 1.1, `Find the string 'SOUNDMODE'`)
 	let addr = Exe.FindText("SOUNDMODE");
 	if (addr < 0)
 		throw Error("'SOUNDMODE' not found");
 
-	$$(_ + '1.2 - Find where it is PUSHed')
+	$$(_, 1.2, `Find where it is PUSHed`)
     const refAddr = Exe.FindHex(PUSH(addr)); //push offset "SOUNDMODE"
     if (refAddr < 0)
         throw Error("'SOUNDMODE' not used");
 
-	$$(_ + '2.1 - Find the soundMode offset used as argument to RegQueryValueEx CALL before the PUSH')
+	$$(_, 2.1, `Find the soundMode offset used as argument to RegQueryValueEx CALL before the PUSH`)
 	let code =
 		PUSH(POS4WC)         //push <soundMode>
 	+	LEA(R32, [EBP, WC])  //lea regA, [ebp + Type]
@@ -61,10 +59,10 @@ LoadClientPlugins = function()
 	if (addr < 0)
         throw Error("RegQueryValueEx CALL missing");
 
-	$$(_ + '2.2 - Extract the offset')
+	$$(_, 2.2, `Extract the offset`)
 	const soundMode = Exe.GetHex(addr + 1, 4);
 
-    $$(_ + '3.1 - Find soundMode comparison')
+    $$(_, 3.1, `Find soundMode comparison`)
 	switch (Exe.Version)
 	{
 		case 10: //VC10
@@ -106,7 +104,7 @@ LoadClientPlugins = function()
 	if (addr < 0)
         throw Error("soundMode comparison missing");
 
-	$$(_ + '3.2 - NOP out the JE')
+	$$(_, 3.2, `NOP out the JE`)
 	Exe.SetNOPs(addr + code.byteCount(), 6);
 
     return true;

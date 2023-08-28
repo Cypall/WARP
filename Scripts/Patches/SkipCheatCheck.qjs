@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2015-2021 Ai4rei/AN                                      *
+*   Copyright (C) 2015-2023 Ai4rei/AN                                      *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN                                              *
 *   Created Date  : 2020-11-09                                             *
-*   Last Modified : 2021-07-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 ///        The CALL comes inside UIWindowMgr::AddWhisperChatToWhisperWnd.
 ///        The enforced JMP ensures the result is ignored.
 ///
-function SkipCheatCheck(patchName)
+SkipCheatCheck = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1 - Find the comparisons after CSession::IsCheatName CALL')
+	$$(_, 1, `Find the comparisons after CSession::IsCheatName CALL`)
 	const template =
 		TEST(EAX, EAX)   //test eax, eax
 	+	JZ(WCp)          //jz short _skip
@@ -67,8 +65,8 @@ function SkipCheatCheck(patchName)
 	if (addr < 0)
 		throw Error("Comparisons not found");
 
-	$$(_ + '2 - Change the relevant JZ to JMP')
-	if (patchName === "SkipInFriendList")
+	$$(_, 2, `Change the relevant JZ to JMP`)
+	if (_ === "SkipInFriendList")
 		Exe.SetJMP(addr + 2); //first JZ
 	else
 		Exe.SetJMP(addr + code.byteCount() - template.byteCount() + 2); //second JZ

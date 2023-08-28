@@ -22,21 +22,19 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief NOP out the SetFocusEdit CALL to ensure edit focus despite clicking outside of input field
 ///
-RestoreChatFocus = function()
+RestoreChatFocus = function(_)
 {
-	const _ = 'RestoreChatFocus : ';
-
-	$$(_ + '1.1 - Ensure WINMGR is loaded')
+	$$(_, 1.1, `Ensure WINMGR is loaded`)
 	WINMGR.load();
 
-	$$(_ + '1.2 - Find UIWindowMgr::SetFocusEdit CALL in CGameMode static member')
+	$$(_, 1.2, `Find UIWindowMgr::SetFocusEdit CALL in CGameMode static member`)
 	const code =
 		CMP([POS3WC], 1) //cmp dword ptr [g_cmouse.button], 1
 	+	JNZ(WCp)         //jnz short _skip#1
@@ -50,7 +48,7 @@ RestoreChatFocus = function()
 	if (addr < 0)
 		throw Error("SetFocusEdit CALL missing");
 
-	$$(_ + '2 - NOP out the PUSH, MOV and CALL')
+	$$(_, 2, `NOP out the PUSH, MOV and CALL`)
 	Exe.SetNOPs(addr + 9, 12);
 
 	return true;

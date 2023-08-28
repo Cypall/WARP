@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2021-08-20                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -71,10 +71,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -83,15 +83,15 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false')
+	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
 
-	$$(_ + '1.4 - Find the string "NUMACCOUNT"')
+	$$(_, 1.4, `Find the string 'NUMACCOUNT'`)
 	let addr = Exe.FindText("NUMACCOUNT");
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'NUMACCOUNT' not found`));
 
-	$$(_ + '1.5 - Find where its used in a PUSH')
+	$$(_, 1.5, `Find where it is PUSHed`)
 	let code =
 		MOV(ECX, POS4WC) //mov ecx, <g_windowMgr>
 	+	CALL(NEG3WC)     //call UIWindowMgr::MakeWindow
@@ -109,13 +109,13 @@ export function load()
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'NUMACCOUNT' not used`));
 
-	$$(_ + '2.1 - Extract the g_windowMgr address, compute MOV instruction & CALL function address')
+	$$(_, 2.1, `Extract the g_windowMgr address, compute MOV instruction & CALL function address`)
 	Value   = Exe.GetUint32(addr + 1);
 	Hex     = Value.toHex(4);
 	MovECX  = ' B9' + Hex;
 	MakeWin = Exe.GetTgtAddr(addr + 6);
 
-	$$(_ + '2.2 - Set validity to true')
+	$$(_, 2.2, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 

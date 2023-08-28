@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2013-2015 Ai4rei/AN                                      *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,28 +23,26 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN, Neo-Mind                                    *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Modify the comparisons in C3dGrannyBoneRes::GetAnimation to always use gr2 from 3dmob_bone folder
 ///
-No3DBoneLimit = function()
+No3DBoneLimit = function(_)
 {
-	const _ = 'No3DBoneLimit : ';
-
-	$$(_ + '1.1 - Find the format string (used in sprintf for 3d mob bones)')
+	$$(_, 1.1, `Find the format string (used in sprintf for 3d mob bones)`)
 	let addr = Exe.FindText("model\\3dmob_bone\\%d_%s.gr2", CASE_INSENSITIVE);
 	if (addr < 0)
 		throw Error("Format string not found");
 
-	$$(_ + '1.2 - Find where it is PUSHed (it will be inside C3dGrannyBoneRes::GetAnimation)')
+	$$(_, 1.2, `Find where it is PUSHed (it will be inside C3dGrannyBoneRes::GetAnimation)`)
 	addr = Exe.FindHex( PUSH(addr) );
 	if (addr < 0)
 		throw Error("Format string not used");
 
-	$$(_ + '1.3 - Find the limit checker within 80h bytes before the PUSH')
+	$$(_, 1.3, `Find the limit checker within 80h bytes before the PUSH`)
 	let code = MOV(BYTE_PTR, [POS4WC], Exe.Version <= 11 ? 0 : AL) // mov byte ptr [addr], 0 or AL
 
 	if (Exe.Version === 6) //VC6
@@ -65,10 +63,10 @@ No3DBoneLimit = function()
 	if (limitAddr < 0)
 		throw Error("Limit check not found");
 
-	$$(_ + '1.4 - Set limitAddr to location after CMP')
+	$$(_, 1.4, `Set limitAddr to location after CMP`)
 	limitAddr += code.byteCount();
 
-	$$(_ + '1.5 - NOP out the JA/JGE instruction that will come after CMP')
+	$$(_, 1.5, `NOP out the JA/JGE instruction that will come after CMP`)
 	let ins = Instr.FromAddr(limitAddr);
 	if (
 		(ins.Codes[0] === 0x77 || ins.Codes[0] === 0x7D) || //SHORT JA/JGE
@@ -82,7 +80,7 @@ No3DBoneLimit = function()
 		throw Error("Limit jump not found");
 	}
 
-	$$(_ + '2.1 - Find the index check after ID Comparison (should be within 20h bytes)')
+	$$(_, 2.1, `Find the index check after ID Comparison (should be within 20h bytes)`)
 	code =
 		TEST(EDI, EDI)  //test edi, edi
 	+	JNE(" 2?")      //jne short _proceed ; distance can be 26, 27 or 28
@@ -92,20 +90,20 @@ No3DBoneLimit = function()
 	if (indexAddr < 0)
 		throw Error("Index check not found");
 
-	$$(_ + '2.2 - NOP out the TEST')
+	$$(_, 2.2, `NOP out the TEST`)
 	Exe.SetNOPs(indexAddr, 2);
 
-	$$(_ + '2.3 - Change the conditional jump')
+	$$(_, 2.3, `Change the conditional jump`)
 	Exe.SetJMP(indexAddr + 2);
 
-	$$(_ + '3.1 - Find the annoying warning message')
+	$$(_, 3.1, `Find the annoying warning message`)
 	addr = Exe.FindText("too many vertex granny model!", CASE_INSENSITIVE);
 
-	$$(_ + '3.2 - Find where its PUSHed & the CALL after it')
+	$$(_, 3.2, `Find where its PUSHed & the CALL after it`)
 	if (addr > 0)
 		addr = Exe.FindHex( PUSH(addr) + CALL() );
 
-	$$(_ + '3.3 - NOP out the CALL')
+	$$(_, 3.3, `NOP out the CALL`)
 	if (addr > 0)
 		Exe.SetNOPs(addr + 5, 5);
 

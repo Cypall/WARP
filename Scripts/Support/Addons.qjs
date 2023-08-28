@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-10-29                                             *
-*   Last Modified : 2021-08-27                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -54,32 +54,32 @@ Number.prototype.toHex = function(cnt = 4, bigEndian = false)
 {
 	const _ = Log.dive(this, 'toHex');
 
-	$$(_ + '1.1 - If only endian ness is specified then count is 4 so rearrange')
+	$$(_, 1.1, `If only endian ness is specified then count is 4 so rearrange`)
 	if (IsBool(cnt))
 	{
 		bigEndian = cnt;
 		cnt = 4;
 	}
 
-	$$(_ + '1.2 - Restrict byte count to 4')
+	$$(_, 1.2, `Restrict byte count to 4`)
 	cnt = Math.min(cnt, 4);
 
-	$$(_ + '1.3 - Convert signed to equivalent unsigned version')
+	$$(_, 1.3, `Convert signed to equivalent unsigned version`)
 	let num = this;
 	if (num < 0)
 		num = 0xFFFFFFFF + num + 1;
 
-	$$(_ + '2.1 - Calculate the length using the cnt')
+	$$(_, 2.1, `Calculate the length using the cnt`)
 	const len = cnt * 2;
 
-	$$(_ + '2.2 - Use the toString method to generate the hex string (big endian)')
+	$$(_, 2.2, `Use the toString method to generate the hex string (big endian)`)
 	const hex = ("00000000" + num.toString(16).toUpperCase()).slice(-len);
 
-	$$(_ + '2.3 - If big endian is needed, return the string')
+	$$(_, 2.3, `If big endian is needed, return the string`)
 	if (bigEndian)
 		return Log.rise(hex);
 
-	$$(_ + '2.4 - Otherwise convert it to little endian with spaces prefixed per byte')
+	$$(_, 2.4, `Otherwise convert it to little endian with spaces prefixed per byte`)
 	let result = "";
 	for (let index = 0; index < len; index += 2)
 	{
@@ -96,37 +96,37 @@ Number.prototype.toIEEE = function(bigEndian = false)
 {
 	const _ = Log.dive(this, 'toIEEE');
 
-	$$(_ + '1.1 - Prefix the sign bit')
+	$$(_, 1.1, `Prefix the sign bit`)
 	let bin = (this < 0 ? '1' : '0'); //sign bit
 
-	$$(_ + '1.2 - Get the integer part')
+	$$(_, 1.2, `Get the integer part`)
 	let num = Math.abs(this);
 
-	$$(_ + '1.3 - Initialize the exponent')
+	$$(_, 1.3, `Initialize the exponent`)
 	let exp = 0;
 
 	if (num < 1)
 	{
-		$$(_ + '2.1 - For numbers < 1 , decrement the exponent')
+		$$(_, 2.1, `For numbers < 1 , decrement the exponent`)
 		for (; num < 1; num *= 2.0, exp--);
 	}
 
 	else if (num >= 2)
 	{
-		$$(_ + '2.2 - For numbers >= 2 , increment the exponent')
+		$$(_, 2.2, `For numbers >= 2 , increment the exponent`)
 		for (; num >= 2; num /= 2.0, exp++);
 	}
 
-	$$(_ + '2.3 - Suffix the exponent + 127 to the binary (ensure 8 bits)')
+	$$(_, 2.3, `Suffix the exponent + 127 to the binary (ensure 8 bits)`)
 	bin += ('0'.repeat(8) + (exp + 127).toString(2)).slice(-8);  //exponent + 0x7F
 
-	$$(_ + '2.4 - Suffix the mantissa (i.e. num) with 1. removed')
+	$$(_, 2.4, `Suffix the mantissa (i.e. num) with 1. removed`)
 	bin += num.toString(2).slice(2);
 
-	$$(_ + '2.5 - Clip anything beyond 32 bits')
+	$$(_, 2.5, `Clip anything beyond 32 bits`)
 	bin = (bin + '0'.repeat(23)).slice(0, 32);
 
-	$$(_ + '2.6 - Convert the binary to hex and return')
+	$$(_, 2.6, `Convert the binary to hex and return`)
 	return Log.rise(parseInt(bin, 2).toHex(4, bigEndian));
 };
 
@@ -137,26 +137,26 @@ String.prototype.toInt = function(cnt = 4, signed = true)
 {
 	const _ = Log.dive(this, 'toInt');
 
-	$$(_ + '1.1 - If only signed is specified rearrang accordingly')
+	$$(_, 1.1, `If only signed is specified rearrang accordingly`)
 	if (IsBool(cnt))
 	{
 		signed = cnt;
 		cnt = 4;
 	}
 
-	$$(_ + '1.2 - Restrict the byte count')
+	$$(_, 1.2, `Restrict the byte count`)
 	cnt = Math.min(cnt, 4);
 
-	$$(_ + '1.3 - Calculate the max value possible (used for signed conversion)')
+	$$(_, 1.3, `Calculate the max value possible (used for signed conversion)`)
 	const max = Math.pow(0x100, cnt);
 
-	$$(_ + '2.1 - Convert to Big endian format')
+	$$(_, 2.1, `Convert to Big endian format`)
 	const beHex = "0x" + this.le2be().slice(-cnt*2);
 
-	$$(_ + '2.2 - Use parseInt to convert to integer')
+	$$(_, 2.2, `Use parseInt to convert to integer`)
 	let num = (-1 & parseInt(beHex, 16));
 
-	$$(_ + '2.3 - Account for signed integer & return the result')
+	$$(_, 2.3, `Account for signed integer & return the result`)
 	if (signed && num > max/2)
 		num -= max;
 
@@ -170,23 +170,23 @@ String.prototype.toHex = function()
 {
 	const _ = Log.dive(this, 'toHex');
 
-	$$(_ + '1.1 - Initialize the result string')
+	$$(_, 1.1, `Initialize the result string`)
 	let result = "";
 
 	for (let i = 0; i < this.length; i++)
 	{
-		$$(_ + '1.2 - Convert each charcter to equivalent hex')
+		$$(_, 1.2, `Convert each charcter to equivalent hex`)
 		let hex = this.charCodeAt(i).toString(16).toUpperCase();
 
-		$$(_ + '1.3 - Prefix \'0\' for 0-15 to ensure 2 hex chars per byte')
+		$$(_, 1.3, `Prefix '0' for 0-15 to ensure 2 hex chars per byte`)
 		if (hex.length == 1)
 			hex = '0' + hex; //prefix 0 for byte 0-F
 
-		$$(_ + '1.4 - Prefix space')
+		$$(_, 1.4, `Prefix space`)
 		result += ' ' + hex;
 	}
 
-	$$(_ + '2 - Return the result')
+	$$(_, 2, `Return the result`)
 	return Log.rise(result);
 };
 
@@ -197,22 +197,22 @@ String.prototype.toAscii = function()
 {
 	const _ = Log.dive(this, 'toAscii');
 
-	$$(_ + '1.1 - Split the hex string into the respective bytes (2chars each)')
+	$$(_, 1.1, `Split the hex string into the respective bytes (2chars each)`)
 	const parts = this.trim().split(/ +/);
 
-	$$(_ + '1.2 - Initialize the result')
+	$$(_, 1.2, `Initialize the result`)
 	let str = "";
 
 	for (let i = 0; i < parts.length; i++)
 	{
-		$$(_ + '1.3 - Convert each part to its equivalent number [' + i + ']')
+		$$(_, 1.3, `Convert each part to its equivalent number [' + i + ']`)
 		const ccode = parseInt(parts[i], 16);
 
-		$$(_ + '1.4 - Convert the number to equivalent ascii character and append')
+		$$(_, 1.4, `Convert the number to equivalent ascii character and append`)
 		str += String.fromCharCode(ccode);
 	}
 
-	$$(_ + '2 - Return the result')
+	$$(_, 2, `Return the result`)
 	return Log.rise(str);
 };
 
@@ -223,14 +223,14 @@ String.prototype.le2be = function()
 {
 	const _ = Log.dive(this, 'le2be');
 
-	$$(_ + '1.1 - Split based on space and reverse it and join back')
+	$$(_, 1.1, `Split based on space and reverse it and join back`)
 	let be = this.split(/ +/).reverse().join('');
 
-	$$(_ + '1.2 - Prefix \'0\' to ensure even no of characters')
+	$$(_ , 1.2, `Prefix '0' to ensure even no of characters`)
 	if ((be.length % 2) !== 0)
 		be = '0' + be;
 
-	$$(_ + '2 - Return the result')
+	$$(_, 2, `Return the result`)
 	return Log.rise(be);
 };
 
@@ -325,15 +325,15 @@ String.prototype.replaceAt = function(index, newstr, len = -1)
 {
 	const _ = Log.dive(this, 'replaceAt');
 
-	$$(_ + '1.1 - Use the new string\'s length as default replacement length')
+	$$(_, 1.1, "Use the new string's length as default replacement length")
 	if (len <= 0)
 		len = newstr.length;
 
-	$$(_ + '1.2 - If negative index provided then consider it wrt end of string')
+	$$(_, 1.2, `If negative index provided then consider it wrt end of string`)
 	if (index < 0)
 		index += this.length;
 
-	$$(_ + '2 - Return the replaced string')
+	$$(_, 2, `Return the replaced string`)
 	return Log.rise(this.slice(0, index) + newstr + this.slice(index + len));
 };
 
@@ -353,24 +353,24 @@ String.prototype.appendAsHex = function(data, bc, bigEndian)
 {
 	const _ = Log.dive(this, 'appendAsHex');
 
-	$$(_ + '1 - Get the type of the data provided')
+	$$(_, 1, `Get the type of the data provided`)
 	const type = typeof data;
 
 	switch(type)
 	{
 		case 'number':
 
-			$$(_ + '2.1 - If it is a number append the data converted to hex and return it')
+			$$(_, 2.1, `If it is a number append the data converted to hex and return it`)
 			return Log.rise(this + data.toHex(bc, bigEndian));
 
 		case 'string':
 
-			$$(_ + '2.2 - If it is a string append the data and return it')
+			$$(_, 2.2, `If it is a string append the data and return it`)
 			return Log.rise(this + data);
 
 		case 'object':
 
-			$$(_ + '2.3 - If it is an object, convert to hex and return it')
+			$$(_, 2.3, `If it is an object, convert to hex and return it`)
 			let result = data.valueOf();
 			if (typeof result === 'number')
 				return Log.rise(this + result.toHex(bc, bigEndian));
@@ -380,7 +380,7 @@ String.prototype.appendAsHex = function(data, bc, bigEndian)
 				return Log.rise(this + result);
 	}
 
-	$$(_ + '2.4 - Return the original if no expected values found')
+	$$(_, 2.4, `Return the original if no expected values found`)
 	return Log.rise(this + '');
 };
 
@@ -395,29 +395,29 @@ String.prototype.byteCount = function()
 {
 	const _ = Log.dive(this + 'byteCount');
 
-	$$(_ + '1 - Ensure string is a hex string (also supports bitwise parts i.e. [.]')
+	$$(_, 1, `Ensure string is a hex string (also supports bitwise parts i.e. [.])`)
 	if (!this.isHex())
 		return Log.rise(-1);
 
-	$$(_ + '2.1 - Split the string into parts based on bit wrapper \'[\'')
+	$$(_, 2.1, `Split the string into parts based on bit wrapper '['`)
 	const parts = this.replace(/_\.?(\w\w)\w*/g, '$1').replace(/ +/g, '').split('[');
 
-	$$(_ + '2.2 - Initialize the nibble length')
+	$$(_, 2.2, `Initialize the nibble length`)
 	let nibLen = 0;
 
 	for (const part of parts)
 	{
-		$$(_ + '2.3 - Split based on bit wrapper end \']\' (' + part + ')')
+		$$(_, 2.3, `Split based on bit wrapper end ']' (${part})`)
 		const subParts = part.split(']');
 
-		$$(_ + '2.4 - If it was there then left of it is binary and right is hex . Otherwise its all hex')
+		$$(_, 2.4, `If it was there then left of it is binary and right is hex . Otherwise its all hex`)
 		if (subParts.length > 1)
 			nibLen += subParts[0].length/4 + subParts[1].length;
 		else
 			nibLen += subParts[0].length;
 	}
 
-	$$(_ + '3 - Return the half of the length')
+	$$(_, 3, `Return the half of the length`)
 	return Log.rise(Math.round(nibLen/2));
 };
 

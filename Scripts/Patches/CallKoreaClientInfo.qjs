@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2020-2021 Secret                                         *
+*   Copyright (C) 2020-2023 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,28 +23,26 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Secret                                        *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Fix the switch and jmp in InitClientInfo and InitDefaultClientInfo functions to make sure both SelectKoreaClientInfo and SelectClientInfo are called
 ///
-CallKoreaClientInfo = function()
+CallKoreaClientInfo = function(_)
 {
-	const _ = 'CallKoreaClientInfo : ';
-
-	$$(_ + '1.1 - Find the error string')
+	$$(_, 1.1, `Find the error string`)
 	const addr = Exe.FindText("Unknown ServiceType !!!");
 	if (addr < 0)
 		throw Error("Message string not found");
 
-	$$(_ + '1.2 - Find all locations where it is used in a PUSH')
+	$$(_, 1.2, `Find all locations where it is PUSHed`)
 	const addrs = Exe.FindHexN( PUSH(addr) );
 	if (addrs.isEmpty())
 		throw Error("Message string not used");
 
-	$$(_ + '1.3 - Prepare codes to be used in the foreach loop')
+	$$(_, 1.3, `Prepare codes to be used in the foreach loop`)
 	const codes =
 	[//0
 		MOVZX(R32, BYTE_PTR, [R32, POS3WC]) //movzx regA, byte ptr [regB + baseAddr]
@@ -75,7 +73,7 @@ CallKoreaClientInfo = function()
 	{
 		const __ = `${_} [${idx}]`;
 
-		$$(__ + '2.1 - Find the Switch case jump before each PUSH')
+		$$(__, 2.1, `Find the Switch case jump before each PUSH`)
 		let csize, addr;
 		if (Exe.Version === 6) //VC6
 		{
@@ -90,16 +88,16 @@ CallKoreaClientInfo = function()
 		if (addr < 0)
 			throw Error(`Switch Case not found for No.${idx + 1}`);
 
-		$$(__ + '2.2 - Point addr to code after the JMP')
+		$$(__, 2.2, `Point addr to code after the JMP`)
 		addr += csize;
 
-		$$(__ + '2.3 - Extract the tblAddr')
+		$$(__, 2.3, `Extract the tblAddr`)
 		const tblAddr = Exe.Vir2Phy(Exe.GetUint32(addr - 4), CODE);
 
-		$$(__ + '2.3 - Make the 2nd entry in the table the same as first, so that all valid langtypes will use same case as 0 i.e. Korea')
+		$$(__, 2.3, `Make the 2nd entry in the table the same as first, so that all valid langtypes will use same case as 0 i.e. Korea`)
 		Exe.SetUint32(tblAddr + 4, Exe.GetUint32(tblAddr));
 
-		$$(__ + '2.4 - Find the Select*Info calls between the push and the Jump')
+		$$(__, 2.4, `Find the Select*Info calls between the push and the Jump`)
 		let nopCount = 5; //enough to NOP out the 2nd JMP
 		let nopLoc = 5;
 		let addr2 = Exe.FindHex(codes[2], addr, tblAddr);
@@ -127,7 +125,7 @@ CallKoreaClientInfo = function()
 		if (addr2 < 0)
 			throw Error(`Select*Info CALLs not found for No.${idx + 1}`);
 
-		$$(__ + '2.5 - NOP out the JMP/JZ')
+		$$(__, 2.5, `NOP out the JMP/JZ`)
 		Exe.SetNOPs(addr2 + nopLoc, nopCount);
 	});
 

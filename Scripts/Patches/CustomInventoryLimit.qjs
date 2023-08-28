@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 CH.C (jchcc)                                   *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-10-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -33,11 +33,9 @@
 ///
 /// \brief Find the max item count display for inventory & replace with user specified value
 ///
-CustomInventoryLimit = function()
+CustomInventoryLimit = function(_)
 {
-	const _ = 'CustomInventoryLimit : ';
-
-	$$(_ + '1 - Find the locations where the /%d string is referenced')
+	$$(_, 1, `Find the locations where the /%d string is referenced`)
 	let code;
 	if (Exe.Version > 11) //VC14.16
 	{
@@ -74,15 +72,15 @@ CustomInventoryLimit = function()
 	if (addrs.isEmpty())
 		throw Error("Item count function missing");
 
-	$$(_ + '2.1 - Retrieve the new value from user')
+	$$(_, 2.1, `Retrieve the new value from user`)
 	const val = Exe.GetUserInput('$MaxItemCount', D_Uint32, "Limit Input", "Enter the max item count", 100, {max: 999});
 	if (val === true)
 		Cancel("Max Count", 100);
 
-	$$(_ + '2.2 - Add the new string')
+	$$(_, 2.2, `Add the new string`)
 	const [free, freeVir] = Exe.AddText("/" + val);
 
-	$$(_ + '2.3 - Replace all the references')
+	$$(_, 2.3, `Replace all the references`)
 	const offset = code.byteCount() - 4;
 	for (const matchAddr of addrs)
 		Exe.SetInt32(matchAddr + offset, freeVir);

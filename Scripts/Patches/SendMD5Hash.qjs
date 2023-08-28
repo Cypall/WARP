@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 GreenBox                                          *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : GreenBox, Neo-Mind                                     *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,14 +31,12 @@
 /// \brief Change all Conditional jumps to JMP related to Langtype comparisons
 ///        inside CLoginMode::CheckExeHashFromAccServer function
 ///
-SendMD5Hash = function()
+SendMD5Hash = function(_)
 {
-	const _ = 'SendMD5Hash : ';
-
-	$$(_ + '1.1 - Ensure the LANGTYPE is loaded')
+	$$(_, 1.1, `Ensure the LANGTYPE is loaded`)
 	LANGTYPE.load();
 
-	$$(_ + '1.2 - Prep comparison patterns to look for')
+	$$(_, 1.2, `Prep comparison patterns to look for`)
 	const patterns =
 	[
 			MOV(R32, [LANGTYPE]) //mov regA, dword ptr [g_serviceType]
@@ -55,25 +53,25 @@ SendMD5Hash = function()
 	];
 	const delta = [2, 7, 2];
 
-	$$(_ + '2.1 - Set the starting addr as the beginning of CODE section')
+	$$(_, 2.1, `Set the starting addr as the beginning of CODE section`)
 	let addr = Exe.GetSectBegin(CODE);
 
 	patterns.forEach( (pat, idx) =>
 	{
-		const __ = `${_} [${idx}] `;
+		const __ = `${_} [${idx}]`;
 
-		$$(__ + '2.2 - Find the Langtype comparison')
+		$$(__, 2.2, `Find the Langtype comparison`)
 		addr = Exe.FindHex(pat, addr);
 		if (addr < 0)
 			throw Error(`Comparison no. ${idx+1} not found`);
 
-		$$(__ + '2.3 - Set addr to location after conditional jump')
+		$$(__, 2.3, `Set addr to location after conditional jump`)
 		addr += pat.byteCount() - delta[idx];
 
-		$$(__ + '2.4 - Change the conditional jump')
+		$$(__, 2.4, `Change the conditional jump`)
 		Exe.SetJMP(addr);
 
-		$$(__ + '2.5 - Set addr to jumped location so that we can skip over unnecessary bytes in next FindHex call')
+		$$(__, 2.5, `Set addr to jumped location so that we can skip over unnecessary bytes in next FindHex call`)
 		addr = Exe.GetTgtAddr(addr + 1, PHYSICAL, 1);
 	});
 

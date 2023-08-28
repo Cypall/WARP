@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
-*   Copyright (C) 2021 Ai4rei/AN                                           *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2023 Ai4rei/AN                                      *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind, Ai4rei/AN                                    *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-10-29                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,14 +31,12 @@
 /// \brief Change the conditional jump for Langtype comparison inside CGameMode::SendMsg function
 ///        for /w & /who command as well as inside CGameMode::Zc_User_Count
 ///
-EnableWho = function()
+EnableWho = function(_)
 {
-	const _ = 'EnableWho : ';
-
-	$$(_ + '1.1 - Ensure the LANGTYPE is loaded')
+	$$(_, 1.1, `Ensure the LANGTYPE is loaded`)
 	LANGTYPE.load();
 
-	$$(_ + '1.2 - Find Langtype comparison')
+	$$(_, 1.2, `Find Langtype comparison`)
 	let code =
 		MOV(EAX, [LANGTYPE]) //mov eax, dword ptr [g_serviceType]
 	+	CMP(EAX, 3)          //cmp eax, 3
@@ -56,10 +54,10 @@ EnableWho = function()
 	if (addr < 0)
 		throw Error("Langtype comparison not found");
 
-	$$(_ + '1.3 - NOP out all the comparisons from first JE (essentially creates a JMP in the exe)')
+	$$(_, 1.3, `NOP out all the comparisons from first JE (essentially creates a JMP in the exe)`)
 	Exe.SetNOPs(addr + 5, code.byteCount() - 5);
 
-	$$(_ + '2.1 - Find the common pattern to identify Zc_User_Count function')
+	$$(_, 2.1, `Find the common pattern to identify Zc_User_Count function`)
 	code =
 		(Exe.Version < 11 ?
 		PUSH_R           //push regA
@@ -74,7 +72,7 @@ EnableWho = function()
 	if (addr < 0)
 		throw Error("Zc_User_Count not found");
 
-	$$(_ + '2.2 - Find the Langtype comparison before the pattern')
+	$$(_, 2.2, `Find the Langtype comparison before the pattern`)
 	code =
 		JNE(WCp)            //jne short _skip#2
 	+	(Exe.Version < 11
@@ -94,12 +92,12 @@ EnableWho = function()
 	if (cmpAddr < 0)
 		throw Error("2nd Langtype comparison not found");
 
-	$$(_ + '2.3 - Change the first JNE')
+	$$(_, 2.3, `Change the first JNE`)
 	Exe.SetJMP(cmpAddr);
 
 	if (Exe.Version >= 9) //VC9+ has additional steps
 	{
-		$$(_ + '3.1 - Find the last Langtype comparison')
+		$$(_, 3.1, `Find the last Langtype comparison`)
 		code =
 			CMP(EAX, 0xF) //cmp eax, 0Fh
 		+	JE(5)         //je short _proceed#2
@@ -110,10 +108,10 @@ EnableWho = function()
 
 		if (addr > 0)
 		{
-			$$(_ + '3.2 - Retrieve the JNE SHORT target address')
+			$$(_, 3.2, `Retrieve the JNE SHORT target address`)
 			let tgtAddr = Exe.GetTgtAddr(addr + code.byteCount() - 1, 1);
 
-			$$(_ + '3.3 - Create a JMP to it right after the CMP')
+			$$(_, 3.3, `Create a JMP to it right after the CMP`)
 			Exe.SetJMP(addr + 3, tgtAddr);
 		}
 	}
@@ -125,11 +123,9 @@ EnableWho = function()
 /// \brief Change the conditional jump to JMP after Langtype comparison inside
 ///        CSession::SetTextType function when using '/showname'
 ///
-EnableShowName = function()
+EnableShowName = function(_)
 {
-	const _ = 'EnableShowName : ';
-
-	$$(_ + '1 - Find the Langtype comparison (don\'t need the langtype value to look for the pattern)')
+	$$(_, 1, `Find the Langtype comparison (don't need the langtype value to look for the pattern)`)
 	const code =
 		TEST(EAX, EAX) //test eax, eax
 	+	JZ(WCp)        //jz short _load -> loading setting for showname
@@ -142,7 +138,7 @@ EnableShowName = function()
 	if (addr < 0)
 		throw Error("Langtype comparison not found");
 
-	$$(_ + '2 - Change the conditional jump')
+	$$(_, 2, `Change the conditional jump`)
 	Exe.SetJMP(addr + 2);
 
 	return true;
@@ -152,11 +148,9 @@ EnableShowName = function()
 /// \brief Turns TT_UNKNOWN return value into TT_NORMAL inside CSession::GetNoParamTalkType and set chatStartOffset
 ///        to 0 in caller (CSession::GetTalkType) instead of -1 when the return value was indeed TT_NORMAL.
 ///
-EnableUnknCmds = function()
+EnableUnknCmds = function(_)
 {
-	const _ = 'EnableUnknCmds : ';
-
-	$$(_ + '1.1 - Prep code to find the ending point of CSession::GetNoParamTalkType function. Also setup the register to be modified')
+	$$(_, 1.1, `Prep code to find the ending point of CSession::GetNoParamTalkType function. Also setup the register to be modified`)
 	const cmn =
 		(ROC.HasFP
 	?
@@ -248,13 +242,13 @@ EnableUnknCmds = function()
 	if (addr < 0)
 		throw Error("Function end missing");
 
-	$$(_ + '1.2 - Modify the MOV statement to unset EAX & increment the target register')
+	$$(_, 1.2, `Modify the MOV statement to unset EAX & increment the target register`)
 	Exe.SetHex(addr + prefix.byteCount() + movPos,
 		XOR(EAX, EAX)  //xor eax, eax
 	+	ADD(tgtReg, 1) //add regA, 1
 	);
 
-	$$(_ + '1.3 - Find the beginning of the function')
+	$$(_, 1.3, `Find the beginning of the function`)
 	prefix =
 		(ROC.HasFP
 	?
@@ -275,10 +269,10 @@ EnableUnknCmds = function()
 	if (addr < 0)
 		throw Error("Function start missing");
 
-	$$(_ + '1.4 - Save it\'s VIRTUAL address')
+	$$(_, 1.4, `Save it's VIRTUAL address`)
 	const funcAddr = Exe.Phy2Vir(addr, CODE);
 
-	$$(_ + '2.1 - Find the location where the function is CALLed (the pattern would match multiple locations)')
+	$$(_, 2.1, `Find the location where the function is CALLed (the pattern would match multiple locations)`)
 	if (Exe.Version === 6)
 	{
 		prefix =
@@ -307,12 +301,12 @@ EnableUnknCmds = function()
 
 	const csize = prefix.byteCount() + suffix.byteCount();
 
-	$$(_ + '2.2 - Find the correct one by checking the function being called')
+	$$(_, 2.2, `Find the correct one by checking the function being called`)
 	addr = addrs.find(memAddr => Exe.GetTgtAddr(memAddr + csize) === funcAddr);
 	if (!addr)
 		throw Error("Only False matches found");
 
-	$$(_ + '2.3 - Find the long JMP after the CALL (occurs twice for VC9). NOP away any OR regA, -1 instructions in between')
+	$$(_, 2.3, `Find the long JMP after the CALL (occurs twice for VC9). NOP away any OR regA, -1 instructions in between`)
 	let hookAddrs = [];
 	let ins = Instr.FromAddr(addr + csize + 4);
 	let count = Exe.Version === 9 ? 2 : 1;
@@ -333,10 +327,10 @@ EnableUnknCmds = function()
 		ins.moveToNext(); //move to next instruction
 	}
 
-	$$(_ + '2.4 - Extract the jump target')
+	$$(_, 2.4, `Extract the jump target`)
 	let retnAddr = Exe.GetTgtAddr(hookAddrs[0] + 1);
 
-	$$(_ + '2.5 - Check if the instruction at the target is OR regA, -1')
+	$$(_, 2.5, `Check if the instruction at the target is OR regA, -1`)
 	ins = Instr.FromAddr(retnAddr, VIRTUAL);
 	if (ins.Codes[0] === 0x83 && ins.Immd === -1)
 	{
@@ -345,7 +339,7 @@ EnableUnknCmds = function()
 			retnAddr += 3;
 	}
 
-	$$(_ + '3.1 - Construct the code to setup TT_NORMAL & chatStartOffset')
+	$$(_, 3.1, `Construct the code to setup TT_NORMAL & chatStartOffset`)
 	const code =
 		DEC(tgtReg)    //dec regA ; for TT_NORMAL reg value becomes 0
 	+	JZ(Filler(1))  //jz <retnAddr>
@@ -353,7 +347,7 @@ EnableUnknCmds = function()
 	+	JMP(Filler(1)) //jmp <retnAddr>
 	;
 
-	$$(_ + '3.2 - Add our code and update the jump targets')
+	$$(_, 3.2, `Add our code and update the jump targets`)
 	AutoHook(hookAddrs, code, { targets : { 1 : retnAddr } });
 
 	return true;

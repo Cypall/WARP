@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,27 +22,25 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-01-15                                             *
-*   Last Modified : 2021-11-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief: Change the Hardcoded loading & retrieval of Shield prefix to Lua based code
 ///
-CustomShields = function()
+CustomShields = function(_)
 {
-	const _ = 'CustomShields : ';
-
 	//===========================================================//
 	// Find first inject & return locations - table loading area //
 	//===========================================================//
 
-	$$(_ + '1.1 - Find address of _가드 (Guard\'s suffix)')
+	$$(_, 1.1, `Find address of _가드 (Guard's suffix)`)
 	let sufAddr = Exe.FindText("_\xB0\xA1\xB5\xE5"); //"_°¡µå"
 	if (sufAddr < 0)
 		throw Error("Guard suffix not found");
 
-	$$(_ + '1.2 - Find where it gets loaded to the table (Inject location)')
+	$$(_, 1.2, `Find where it gets loaded to the table (Inject location)`)
 	let code, argSetup;
 	if (Exe.Version === 6) //VC6
 	{
@@ -67,16 +65,20 @@ CustomShields = function()
 	if (hookReq < 0)
 		throw Error("Guard suffix not used");
 
-	$$(_ + '1.3 - Extract the register that points to the location to store the suffix & push it (for VC9+)')
+	$$(_, 1.3, `Save the instruction & extract the register that points to the location to store the suffix & push it (for VC9+)`)
+	let hookIns;
 	if (Exe.Version >= 9)
-		argSetup = PUSH(Instr.FromAddr(hookReq).MRM.getReg('M')); //push regA
+	{
+		hookIns = Instr.FromAddr(hookReq);
+		argSetup = PUSH(hookIns.MRM.getReg('M')); //push regA
+	}
 
-	$$(_ + '1.4 - Find the address of _버클러 (Buckler\'s suffix)')
+	$$(_, 1.4, `Find the address of _버클러 (Buckler's suffix)`)
 	sufAddr = Exe.FindText("_\xB9\xF6\xC5\xAC\xB7\xAF"); //"_¹öÅ¬·¯"
 	if (sufAddr < 0)
 		throw Error("Buckler suffix not found");
 
-	$$(_ + '1.5 - Find where it gets loaded to the table (Return location)')
+	$$(_, 1.5, `Find where it gets loaded to the table (Return location)`)
 	code = MOV(Exe.Version === 6 ? [EAX] : [R32, 8], sufAddr); //mov dword ptr [eax], offset "_¹öÅ¬·¯"
 	                                                           //   OR
 	                                                           //mov dword ptr [regA + 8], offset "_¹öÅ¬·¯"
@@ -85,20 +87,25 @@ CustomShields = function()
 	if (addr < 0)
 		throw Error("Buckler suffix not used");
 
-	$$(_ + '1.6 - Return address is after code')
-	const retReq = Exe.Phy2Vir(addr + code.byteCount(), CODE);
+	$$(_, 1.6, `Return address is after code`)
+	const retPhy = addr + code.byteCount();
+	const retReq = Exe.Phy2Vir(retPhy, CODE);
 
-	$$(_ + '1.7 - Obtain the new Max Shield count from the user')
-	let MaxShield = Exe.GetUserInput('$maxShield', D_Int8, "Shield Limit", "Enter the maximum number of shield types required", 10, {min: 6, saveDefault: true});
+	$$(_, 1.7, `Extract the extra instruction in between table assignments`)
+	const extraIns = Exe.Version >= 9
+		? FetchTillEnd(hookIns.NextAddr, 1, hookIns.getNext(), null, -1, ins => ins.Addr === retPhy)[1]
+		: ''
+		;
+
+	$$(_, 1.8, `Obtain the new Max Shield count from the user`)
+	const MaxShield = Exe.GetUserInput('$maxShield', D_Int8, "Shield Limit", "Enter the maximum number of shield types required", 10, {min: 6, saveDefault: true});
 	if (MaxShield === false)
 		Cancel("Limit reverted to default");
 
-	MaxShield = parseInt(MaxShield); //temporary fix for strings
-	
-	$$(_ + '2.1 - Ensure LUA object is loaded')
+	$$(_, 2.1, `Ensure LUA object is loaded`)
 	LUA.load();
 
-	$$(_ + '2.2 - Construct the code to be added')
+	$$(_, 2.2, `Construct the code to be added`)
 	const [prep, main, restore] = LUA.createCaller("ReqShieldName", "d>s", EDI, EAX);
 
 	let parts =
@@ -123,10 +130,11 @@ CustomShields = function()
 	+	restore                        //Stack Restore
 	+	POPAD                          //popad
 	+	ADD(ESP, 4)                    //add esp, 4
+	+	extraIns                       //<extra instructions>
 	+	JMP(Filler(2))                 //jmp <retReq>
 	];
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	let args =
 	{
 		localTgts : {
@@ -138,10 +146,10 @@ CustomShields = function()
 		}
 	};
 
-	$$(_ + '2.3 - Put the argument setup')
+	$$(_, 2.3, `Put the argument setup`)
 	Exe.SetHex(hookReq, argSetup);
 
-	$$(_ + '2.4 - Add our code and jump to it after hookReq')
+	$$(_, 2.4, `Add our code and jump to it after hookReq`)
 	AutoHook(hookReq + argSetup.byteCount(), parts, args);
 
 	//=========================//
@@ -159,28 +167,31 @@ CustomShields = function()
 	// Find second inject location - CSession::GetShieldType. //
 	//========================================================//
 
+	$$(_, 3.1, `Load the SSN`)
+	SSN.load();
+
 	let refAddr;
 	if (Exe.BuildDate < 20170700)
 	{
-		$$(_ + '3.1 - Find location where the GetShieldType is called - there are multiple matches but all of them are same')
+		$$(_, 3.2, `Find location where the GetShieldType is called - there are multiple matches but all of them are same`)
 		code =
-			CMP(EAX, 0x7D0)  //cmp eax, 7D0h
-		+	JLE(WCp)         //jle short addr1
-		+	PUSH(EAX)        //push eax
-		+	MOV(ECX, POS4WC) //mov ecx, <g_session> ; Note: this is the reference value for all the tables
-		+	CALL()           //call CSession::GetShieldType
+			CMP(EAX, 0x7D0) //cmp eax, 7D0h
+		+	JLE(WCp)        //jle short addr1
+		+	PUSH(EAX)       //push eax
+		+	MOV(ECX, SSN)   //mov ecx, <g_session> ; Note: this is the reference value for all the tables
+		+	CALL()          //call CSession::GetShieldType
 		;
 
-		const addrs = Exe.FindHexN(code);
-		if (addrs.isEmpty())
+		const addr = Exe.FindHex(code);
+		if (addr < 0)
 			throw Error("GetShieldType call missing");
 
-		$$(_ + '3.2 - Save the address of the CALL')
-		refAddr = addrs[0] + code.byteCount() - 1;
+		$$(_, 3.3, `Save the address of the CALL`)
+		refAddr = addr + code.byteCount() - 1;
 	}
 	else
 	{
-		$$(_ + '3.3 - Find location where the GetShieldType is called (Only 1 match now)')
+		$$(_, 3.4, `Find location where the GetShieldType is called (Only 1 match now)`)
 		code =
 			MOV(BYTE_PTR, [EBP, WCn], 3) //mov byte ptr [LOCAL.x], 3
 		+	(Exe.Version === 11
@@ -189,7 +200,7 @@ CustomShields = function()
 		:
 			''
 		)
-		+	MOV(ECX, POS4WC)             //mov ecx, <g_session>
+		+	MOV(ECX, SSN)                //mov ecx, <g_session>
 		+	(Exe.Version > 11
 		?
 			PUSH([EBP, NEG2WC])          //push dword ptr [LOCAL.y]
@@ -212,14 +223,14 @@ CustomShields = function()
 		if (addr < 0)
 			throw Error("GetShieldType call missing (New)");
 
-		$$(_ + '3.4 - Save the location of the CALL')
+		$$(_, 3.5, `Save the location of the CALL`)
 		refAddr = addr + code.byteCount();
 	}
 
-	$$(_ + '3.5 - Extract the PHYSICAL address of the GetShieldType function')
+	$$(_, 3.6, `Extract the PHYSICAL address of the GetShieldType function`)
 	const hookMap = Exe.GetTgtAddr(refAddr + 1, PHYSICAL);
 
-	$$(_ + '4.1 - Construct the code to be injected')
+	$$(_, 4.1, `Construct the code to be injected`)
 	parts = LUA.createCaller("GetShieldID", "d>d", EDX, EAX);
 
 	code =
@@ -230,12 +241,12 @@ CustomShields = function()
 	+	RETN(4)              //retn 4
 	;
 
-	$$(_ + '4.2 - Add our code and jump to it from hookMap')
+	$$(_, 4.2, `Add our code and jump to it from hookMap`)
 	let [, newMapVir] = AutoHook(hookMap, code, { postProc : LUA.finalize });
 
 	if (Exe.Version === 9 || Exe.Version === 10)
 	{
-		$$(_ + '5.1 - Find Register assignment to 5 and replace with MaxShield')
+		$$(_, 5.1, `Find Register assignment to 5 and replace with MaxShield`)
 		code =
 			MOV(R32, 5)   //mov regA, 5
 		+	SUB(R32, R32) //sub regA, regB
@@ -247,7 +258,7 @@ CustomShields = function()
 
 		Exe.SetInt32(addr + 1, MaxShield);
 
-		$$(_ + '5.2 - Find EAX comparison with 5 before assignment and replace with MaxShield')
+		$$(_, 5.2, `Find EAX comparison with 5 before assignment and replace with MaxShield`)
 		code =
 			CMP(EAX, 5) //cmp eax, 5
 		+	JAE(WC)     //jae short _skip
@@ -261,7 +272,7 @@ CustomShields = function()
 	}
 	else
 	{
-		$$(_ + '5.3 - Find "push 5" before hookReq and replace with MaxShield if its there')
+		$$(_, 5.3, `Find "push 5" before hookReq and replace with MaxShield if its there`)
 		code =
 			PUSH_EAX      //push eax
 		+	PUSH(5)       //push 5
@@ -288,7 +299,7 @@ CustomShields = function()
 	let funcAddr;
 	if (Exe.BuildDate < 20170700)
 	{
-		$$(_ + '6.1 - Find the function directly since its CALLed much later in the call stack')
+		$$(_, 6.1, `Find the function directly since its CALLed much later in the call stack`)
 		if (ROC.HasFP)
 		{
 			code =
@@ -333,7 +344,7 @@ CustomShields = function()
 	}
 	else
 	{
-		$$(_ + '6.2 - For later clients, its CALLed after the GetShieldType CALL.')
+		$$(_, 6.2, `For later clients, its CALLed after the GetShieldType CALL.`)
 		code =
 			CMP(R32, 5)             //cmp regA, 5
 		+	JL(POS2WC)              //jl _skip
@@ -352,14 +363,14 @@ CustomShields = function()
 		if (addr < 0)
 			throw Error("Missing shield id checker CALL");
 
-		$$(_ + '6.3 - Save the CALLed address (PHYSICAL one)')
+		$$(_, 6.3, `Save the CALLed address (PHYSICAL one)`)
 		funcAddr = Exe.GetTgtAddr(addr + code.byteCount(), PHYSICAL);
 	}
 
-	$$(_ + '6.4 - Now convert to VIRTUAL')
+	$$(_, 6.4, `Now convert to VIRTUAL`)
 	const funcVir = Exe.Phy2Vir(funcAddr, CODE);
 
-	$$(_ + '6.5 - Prep the code to be replaced with')
+	$$(_, 6.5, `Prep the code to be replaced with`)
 	parts = LUA.createCaller("ValidateShieldID", "dd>b", [EBP, 0xC], [EBP, 8], AL);
 
 	code =
@@ -371,13 +382,13 @@ CustomShields = function()
 	+	ALL00          //Null bytes for gap
 	;
 
-	$$(_ + '6.6 - Fill in the blanks')
+	$$(_, 6.6, `Fill in the blanks`)
 	code = LUA.finalize(code, funcVir);
 
-	$$(_ + '6.7 - Replace the function with our code')
+	$$(_, 6.7, `Replace the function with our code`)
 	Exe.SetHex(funcAddr, code);
 
-	$$(_ + '7.1 - Find the extra comparison function that got added from 2012-04-18RE onwards. ugh')
+	$$(_, 7.1, `Find the extra comparison function that got added from 2012-04-18RE onwards. ugh`)
 	const prefix =
 		(ROC.HasFP
 	?
@@ -444,16 +455,16 @@ CustomShields = function()
 	if (addr < 0 && Exe.BuildDate > 20130000) //Mandatory for 2013+
 		throw Error("Extra Limiter missing");
 
-	$$(_ + '7.2 - Move to the position after the call (all the code till that point is relevant)')
+	$$(_, 7.2, `Move to the position after the call (all the code till that point is relevant)`)
 	addr += prefix.byteCount();
 
-	$$(_ + '7.3 - Retrieve the displacement wrt EAX')
+	$$(_, 7.3, `Retrieve the displacement wrt EAX`)
 	const disp = Exe.GetInt8(addr + dispLoc);
 
-	$$(_ + '7.4 - Retrieve the target address (this retrieve the weapon ID)')
+	$$(_, 7.4, `Retrieve the target address (this retrieve the weapon ID)`)
 	funcAddr = Exe.GetTgtAddr(addr - 4);
 
-	$$(_ + '7.5 - Create our replacement code (At this point the earlier hookMap function has been called to retrieve the shield id)')
+	$$(_, 7.5, `Create our replacement code (At this point the earlier hookMap function has been called to retrieve the shield id)`)
 	parts =
 	[//0
 		TEST(EAX, EAX)         //test eax, eax
@@ -483,7 +494,7 @@ CustomShields = function()
 	+	RETN(4)                //retn 4
 	];
 
-	$$(_ + '7.6 - Fill the blanks')
+	$$(_, 7.6, `Fill the blanks`)
 	const firstAddr = Exe.Phy2Vir(addr, CODE);
 	code = SetFillTargets(parts,
 	{
@@ -492,13 +503,13 @@ CustomShields = function()
 		 2    : funcAddr
 	});
 
-	$$(_ + '7.7 - Replace the function being CALLed')
+	$$(_, 7.7, `Replace the function being CALLed`)
 	Exe.SetTgtAddr(addr - 4, newMapVir);
 
-	$$(_ + '7.8 - Append our code after the CALL')
+	$$(_, 7.8, `Append our code after the CALL`)
 	Exe.SetHex(addr, code);
 
-	$$(_ + '7.9 - Check with user if they want to copy the supporting files to the target area\'s data folder')
+	$$(_, 8, `Check with user if they want to copy the supporting files to the target area's data folder`)
 	if (!Warp.TestMode)
 		Exe.GetUserInput('$copyCSLub', D_Bool, "Copy Custom Shield Lua", "Do you want the supporting Lub files copied to <b>'data'</b> folder when patch is applied?", true);
 
@@ -517,39 +528,38 @@ CustomShields.onApplied = function()
 {
 	if (!Warp.TestMode && Exe.GetSavedInput('$copyCSLub'))
 	{
-		const _ = 'CustomShields.onApplied : ';
+		const _ = 'CustomShields.onApplied';
 
-		$$(_ + '1.1 - Prepare the directory paths')
-
+		$$(_, 1.1, `Prepare the directory paths`)
 		const suffix = "/LuaFiles514/Lua Files/DataInfo";
 		const srcDir = Warp.Path + "Inputs" + suffix;
 		let tgtDir = System.DirPath(Warp.TgtExe) + "/data" + suffix;
 
-		$$(_ + '1.2 - For old clients the version prefix is not there')
+		$$(_, 1.2, `For old clients the version prefix is not there`)
 		if (Exe.BuildDate < 20120000)
 			tgtDir = tgtDir.replace("LuaFiles514/", '');
 
-		$$(_ + '1.3 - Create the target directory')
+		$$(_, 1.3, `Create the target directory`)
 		const ready = System.MkDir(tgtDir);
 		if (!ready)
 			return;
 
-		$$(_ + '1.4 - Retrieve the max shield value')
+		$$(_, 1.4, `Retrieve the max shield value`)
 		const MaxShield = Exe.GetSavedInput('$maxShield');
 
-		$$(_ + '2.1 - Copy the lua file containing the tables')
+		$$(_, 2.1, `Copy the lua file containing the tables`)
 		System.Copy(srcDir + "/ShieldTable.lub", tgtDir);
 
 		if (MaxShield != 10)
 		{
-			$$(_ + '2.2 - If the limit is different read the lua file containing functions')
+			$$(_, 2.2, `If the limit is different read the lua file containing functions`)
 			let fp = new TextFile(srcDir + "/ShieldTable_F.lub", ASCII, "r");
 			let contents = fp.Read(fp.Size);
 
-			$$(_ + '2.3 - Change the limit inside')
+			$$(_, 2.3, `Change the limit inside`)
 			contents = contents.replace("Max_Shield = 10", `Max_Shield = ${MaxShield}`);
 
-			$$(_ + '2.4 - Write to the target folder')
+			$$(_, 2.4, `Write to the target folder`)
 			if (fp.Open(tgtDir + "/ShieldTable_F.lub", 'w')) //encoding is already ASCII
 			{
 				fp.Write(contents);
@@ -558,7 +568,7 @@ CustomShields.onApplied = function()
 		}
 		else
 		{
-			$$(_ + '2.5 - If limit is 10 then just copy the lua file containing functions')
+			$$(_, 2.5, `If limit is 10 then just copy the lua file containing functions`)
 			System.Copy(srcDir + "/ShieldTable_F.lub", tgtDir, true);
 		}
 	}

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-21                                             *
-*   Last Modified : 2021-10-02                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -76,22 +76,22 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Get the PHYSICAL address of "rdata.grf" & if present its a renewal client.')
+	$$(_, 1.1, `Get the PHYSICAL address of 'rdata.grf' & if present its a renewal client.`)
 	RGrfPhy = Exe.FindText("rdata.grf", PHYSICAL);
 	IsRenewal = (RGrfPhy > 0);
 
-	$$(_ + '1.2 - Zero clients will have the RenewSetup Zero string')
+	$$(_, 1.2, `Zero clients will have the RenewSetup Zero string`)
 	IsZero = (Exe.FindText("Software\\Gravity Soft\\RenewSetup Zero", PHYSICAL, false) > 0);
 
-	$$(_ + '1.3 - If neither then it is a main client')
+	$$(_, 1.3, `If neither then it is a main client`)
 	IsMain = !IsRenewal && !IsZero;
 
-	$$(_ + '1.4 - Check for clients with 2010+ build date')
+	$$(_, 1.4, `Check for clients with 2010+ build date`)
 	Post2010 = Exe.BuildDate > 20100000;
 
-	$$(_ + '1.5 - Check for Frame Pointer by searching for the characteristic PUSH EBP & MOV EBP, ESP as the first statement of a function')
-	$$(_ + '      To avoid false match we will prefix sequence of INTs (some clients have NOPs instead)')
-	const fromAddr = Exe.GetSectBegin(CODE);
+	$$(_, 1.5, `Check for Frame Pointer by searching for the characteristic PUSH EBP & MOV EBP, ESP as the first statement of a function`)
+	$$(_, 1.5, `To avoid false match we will prefix sequence of INTs (some clients have NOPs instead)`)
+	const fromAddr = Exe.GetSectBegin(CODE) + (Exe.BuildDate > 20220000 && 0x3000);
 	const toAddr = fromAddr + 0x500;
 
 	let addr = Exe.FindHex(INT3.repeat(5) + FP_START, fromAddr, toAddr); //int3 x5 times
@@ -103,26 +103,26 @@ export function load()
 	HasFP = (addr > 0);
 	StkReg = HasFP ? EBP : ESP;
 
-	$$(_ + '1.6 - Check the build date & Zero status for Hidden Login Window')
+	$$(_, 1.6, `Check the build date & Zero status for Hidden Login Window`)
 	HasLWhidden = Exe.BuildDate > 20100803 && (Exe.BuildDate < 20171018 || (Exe.BuildDate < 20181114 && !IsZero));
 
-	$$(_ + '1.7 - Check for packet key presence')
+	$$(_, 1.7, `Check for packet key presence`)
 	HasPktKeys = Exe.BuildDate >= 20110817;
 
-	$$(_ + '2.1 - Get the address of "NC_CashShop", Roulette bmp string & "adventurerAgency"')
+	$$(_, 2.1, `Get the address of 'NC_CashShop', Roulette bmp string & 'adventurerAgency'`)
 	CashShopAddr = Exe.FindText("NC_CashShop");
 	RouletteAddr = Exe.FindText("\xC0\xAF\xC0\xFA\xC0\xCE\xC5\xCD\xC6\xE4\xC0\xCC\xBD\xBA\\basic_interface\\roullette\\RoulletteIcon.bmp", CASE_INSENSITIVE);
 	AdvAgencyAddr = Exe.FindText("adventurerAgency");
 
-	$$(_ + '2.2 - Get the address of "KERNEL32.dll"')
+	$$(_, 2.2, `Get the address of 'KERNEL32.dll'`)
 	Kernel32 = Exe.FindText("KERNEL32.dll", CASE_INSENSITIVE);
 	if (Kernel32 < 0)
 		Kernel32 = Exe.FindText("KERNEL32.dll", CASE_INSENSITIVE, false); // new clients have it in small letters (but we will search insensitively)
 			                                                                          // and not necessarily seperated from previous string with a NULL
-	$$(_ + '2.3 - Set the base name')
+	$$(_, 2.3, `Set the base name`)
 	BaseName = System.BaseName(Exe.FilePath);
 
-	$$(_ + '2.4 - Reset the import addresses')
+	$$(_, 2.4, `Reset the import addresses`)
 	GetModHandle = -1;
 	GetProcAddr  = -1;
 	OutDbgStrA   = -1;

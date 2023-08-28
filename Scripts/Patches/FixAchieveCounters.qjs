@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 Andrei Karas (4144)                            *
-*   Copyright (C) 2021 X-EcutiOnner (xex.ecutionner@gmail.com)             *
+*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2021-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -21,30 +21,28 @@
 *                                                                          *
 |**************************************************************************|
 *                                                                          *
-*   Author(s)     : Andrei                                                 *
+*   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2021-06-15                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 // TODO - Clients post 2017-10-00, seems to be doing this properly with a loop.
 //        Check later if a fix is really needed.
 
-FixAchieveCounters = function()
+FixAchieveCounters = function(_)
 {
-	const _ = 'FixAchieveCounters : ';
-
-	$$(_ + '1.1 - Find the location where the image name is PUSHed')
+	$$(_, 1.1, `Find the location where the image name is PUSHed`)
 	const startAddr = Exe.FindHex(PUSH(this.BmpAddr) + CALL());
 	if (startAddr < 0)
 		throw Error("BG not pushed");
 
-	$$(_ + '1.2 - Find the format string')
+	$$(_, 1.2, `Find the format string`)
 	let addr = Exe.FindText("%d/%d");
 	if (addr < 0)
 		throw Error("Format string missing");
 
-	$$(_ + '1.3 - Find where it is used for the global counter')
+	$$(_, 1.3, `Find where it is used for the global counter`)
 	let parts =
 	[
 		MOV(EDX, [EDI, WCp]) //mov edx, dword ptr [edi + dispA]
@@ -63,14 +61,14 @@ FixAchieveCounters = function()
 
 	addr = Exe.FindHex(parts, startAddr, startAddr + 0x500);
 
-	$$(_ + '1.4 - Point addr1 to position of the type1 offset')
+	$$(_, 1.4, `Point addr1 to position of the type1 offset`)
 	let addr1;
 	if (addr > 0)
 		addr1 = addr + parts.byteCount(0) - 1;
 	else if (Exe.BuildDate < 20170000)
 		throw Error("Pattern not found");
 
-	$$(_ + '1.5 - Repeat for the other category counters (there should be 5 of them)')
+	$$(_, 1.5, `Repeat for the other category counters (there should be 5 of them)`)
 	parts[1] =
 		MOV(ECX, [EAX, WCp]) //mov ecx, dword ptr [eax + dispB]
 	+	MOV(EAX, [EDX, WCp]) //mov eax, dword ptr [edx + offset#1] <-- type2
@@ -80,15 +78,15 @@ FixAchieveCounters = function()
 	if (addrs.isEmpty())
 		throw Error("Expected exactly 5 matches for 2nd pattern");
 
-	$$(_ + '1.6 - Verify that global counter was found properly')
+	$$(_, 1.6, `Verify that global counter was found properly`)
 	if (addr1 && (addr1 + 0x200) < addrs[0])
 		throw Error("Found false match");
 
-	$$(_ + '2.1 - Setup the offsets for the type1 and type2 displacements')
+	$$(_, 2.1, `Setup the offsets for the type1 and type2 displacements`)
 	const type1Off = parts.byteCount(0) - 1;
 	const type2Off = type1Off + parts.byteCount(1);
 
-	$$(_ + '2.2 - Prepare the pattern to check for false positives')
+	$$(_, 2.2, `Prepare the pattern to check for false positives`)
 	const code =
 		PUSH(POS2WC)                 //push <msgId>
 	+	MOV([EBP, WC], 0xF)          //mov dword ptr [ebp + dstStr.m_allocated_len], 0Fh
@@ -100,13 +98,13 @@ FixAchieveCounters = function()
 	+	PUSH_EAX                     //push eax
 	;
 
-	$$(_ + '2.3 - Setup the variables for the various categories')
+	$$(_, 2.3, `Setup the variables for the various categories`)
 	let msgAddrs = [];
 	let msgIDs = [];
 	let type1Addrs = [];
 	let type2Addrs = [];
 
-	$$(_ + '2.4 - Extract the values for all 5 categories')
+	$$(_, 2.4, `Extract the values for all 5 categories`)
 	addrs.forEach( (memAddr, i) =>
 	{
 		const addr = Exe.FindHex(code, memAddr - 0x40, memAddr);
@@ -119,11 +117,11 @@ FixAchieveCounters = function()
 		type2Addrs.push(memAddr + type2Off);
 	});
 
-	$$(_ + '2.5 - If addr1 was defined then change it to 0')
+	$$(_, 2.5, `If addr1 was defined then change it to 0`)
 	if (addr1)
 		Exe.SetInt8(addr1, 0);
 
-	$$(_ + '2.6 - Swap the category values')
+	$$(_, 2.6, `Swap the category values`)
 	for (const [from, to] of
 	[
 		[0, 1], //Adventure -> Battle    (52, 9d)
@@ -137,7 +135,7 @@ FixAchieveCounters = function()
 		Exe.SetInt8(addrs[from] + type2Off, type2Addrs[to]);
 	}
 
-	$$(_ + '2.7 - Set the type1 offset for Feat (180, cf)')
+	$$(_, 2.7, `Set the type1 offset for Feat (180, cf)`)
 	Exe.SetInt8(addrs[4] + type1Off, type2Addrs[4]);
 
 	return true;

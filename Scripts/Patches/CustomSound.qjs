@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Swap the sampling frequency from 22050 to 44100
 ///
-Enable44kHzAudio = function()
+Enable44kHzAudio = function(_)
 {
-	const _ = 'Enable44kHzAudio : ';
-
-	$$(_ + '1 - Find the code assigning the sampling frequency')
+	$$(_, 1, `Find the code assigning the sampling frequency`)
 	const memLoc = Exe.BuildDate < 20131200 ? [POS3WC] : [ESI, POS2WC]; //[CDigitalRate] or [ESI + CSoundMgr.digitalrate]
 	const code =
 		MOV(memLoc, 8000)  //mov dword ptr [memLoc], 1F40h
@@ -54,7 +52,7 @@ Enable44kHzAudio = function()
 	}
 	*/
 
-	$$(_ + '2 - Change 22050 to 44100')
+	$$(_, 2, `Change 22050 to 44100`)
 	Exe.SetInt32(addr + code.byteCount() - 4, 44100);
 
 	return true;
@@ -65,11 +63,9 @@ Enable44kHzAudio = function()
 ///
 /// \brief Insert custom code to auto mute audio when game window is inactive
 ///
-AutoMute = function()
+AutoMute = function(_)
 {
-	const _ = 'AutoMute : ';
-
-	$$(_ + '1.1 - Find the reference code to retrieve Audio specific functions & global values.')
+	$$(_, 1.1, `Find the reference code to retrieve Audio specific functions & global values.`)
 	let parts =
 	[
 		PUSH(POS4WC)        //push offset "Bgm_Volume"
@@ -114,7 +110,7 @@ AutoMute = function()
 	if (addr < 0)
 	    throw Error("Reference pattern missing");
 
-	$$(_ + '1.2 - Extract all required values')
+	$$(_, 1.2, `Extract all required values`)
 	const addrs = MapAddrs(addr, parts);
 
 	const SetStreamVol = Exe.GetTgtAddr(addrs[2] + 1);
@@ -122,7 +118,7 @@ AutoMute = function()
 	const Set3DEffectVol = Exe.GetTgtAddr(addrs[5] + 1);
 	const MovMgr = Instr.FromAddr(addrs[4]);
 
-	$$(_ + '2.1 - Find the CGameMode::OnUpdate function')
+	$$(_, 2.1, `Find the CGameMode::OnUpdate function`)
     parts = [
 		TEST(EAX, EAX)       //test eax, eax
 	+	JNZ(0x1A)            //jnz short _skip
@@ -159,7 +155,7 @@ AutoMute = function()
 	logField("UIReplayControlWnd_vtable::SendMsg", addr, SendMsgOffset)
 	*/
 
-	$$(_ + '2.2 - Find the g_Weather assignment after it')
+	$$(_, 2.2, `Find the g_Weather assignment after it`)
     let code =
 		CALL(ALLWC)      //call UIWindowMgr::InvalidateAll
 	+	MOV(ECX, POS4WC) //mov ecx, <g_Weather>           <--Need to issue CALL from here to our code
@@ -191,10 +187,10 @@ AutoMute = function()
 	logFieldAbs("C3dDevice::m_bIsFullscreen", addr, m_bIsFullscreenOffset);
 	*/
 
-	$$(_ + '2.3 - Save the location of the MOV ECX')
+	$$(_, 2.3, `Save the location of the MOV ECX`)
 	const hookAddr = addr + 5;
 
-	$$(_ + '3.1 - Find the needed imported functions')
+	$$(_, 3.1, `Find the needed imported functions`)
 	const GetActiveWindow = Exe.FindFunc("GetActiveWindow", "USER32.dll");
 	if (GetActiveWindow < 0)
 		throw Error("GetActiveWindow not found");
@@ -203,7 +199,7 @@ AutoMute = function()
 	if (timeGetTime < 0)
 		throw Error("timeGetTime missing");
 
-	$$(_ + '3.2 - Construct our function code')
+	$$(_, 3.2, `Construct our function code`)
 	const MovNRetn = Instr.FromAddr(hookAddr) + RETN();
 
 	parts =
@@ -267,7 +263,7 @@ AutoMute = function()
 	];
 
 
-	$$(_ + '3.3 - Prepare the initial values for the extra addresses we are using in the code')
+	$$(_, 3.3, `Prepare the initial values for the extra addresses we are using in the code`)
 	const buffer =
 		" 00 00 00 00" //lastCheck
     +	" 00 00 00 00" //isMuted
@@ -276,7 +272,7 @@ AutoMute = function()
     ;
 	const bufSize = 16;
 
-	$$(_ + '3.4 - Prepare the arguments for auto-hook')
+	$$(_, 3.4, `Prepare the arguments for auto-hook`)
 	const [,, _skipToCall,, _cmpMute,, csize] = MapAddrs(bufSize, parts);
 
 	const args =
@@ -301,7 +297,7 @@ AutoMute = function()
 		isCall : true
 	}
 
-	$$(_ + '3.5 - Add our code and call it from hookAddr')
+	$$(_, 3.5, `Add our code and call it from hookAddr`)
 	AutoHook(hookAddr, buffer + parts.join(''), args);
 
 	return true;

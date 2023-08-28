@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
-*    Copyright (C) 2021 Andrei Karas (4144)                                *
-*    Copyright (C) 2021 X-EcutiOnner (xex.ecutionner@gmail.com)            *
-*    Copyright (C) 2021 Neo-Mind                                           *
+*    Copyright (C) 2021-2023 Andrei Karas (4144)                           *
+*    Copyright (C) 2021-2023 X-EcutiOnner (xex.ecutionner@gmail.com)       *
+*    Copyright (C) 2021-2023 Neo-Mind                                      *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Andrei, X-EcutiOnner, Neo-Mind                         *
 *   Created Date  : 2021-06-01                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -32,11 +32,9 @@
 /// \brief Replace Arrows Keys offset to fix wrong display Font Charset after comparison
 ///        in Hotkey Setting UI for ASCII Langtype inside UIHotkeyGuideWnd_virt6B function.
 ///
-FixArrowsCharset = function()
+FixArrowsCharset = function(_)
 {
-	const _ = 'FixArrowsCharset : ';
-
-	$$(_ + '1.1 - Find the Up, Right & Down arrow strings (they are always together)')
+	$$(_, 1.1, `Find the Up, Right & Down arrow strings (they are always together)`)
 	let code =
 		" A1 E8 00" // 00 db '↑',0
     +   " 00 "      // 03 db 0
@@ -50,7 +48,7 @@ FixArrowsCharset = function()
 	if (addr < 0)
 		throw Error("First set of arrows missing");
 
-	$$(_ + '1.2 - Find the left arrow before this one')
+	$$(_, 1.2, `Find the left arrow before this one`)
 	code =
 		" A1 E7 00" // db '←',0
     +   " 00 "      // db 0
@@ -60,7 +58,7 @@ FixArrowsCharset = function()
 	if (addrL < 0)
 		throw Error("Left arrow missing");
 
-	$$(_ + '1.3 - Find the square key after it')
+	$$(_, 1.3, `Find the square key after it`)
 	code =
 		" A2 C7 00" // db '▤',0
     +   " 00 "      // db 0
@@ -70,7 +68,7 @@ FixArrowsCharset = function()
 	if (addrM < 0)
 		throw Error("Square missing");
 
-	$$(_ + '2 - Replace the strings'); //semicolon needed here
+	$$(_, 2, `Replace the strings`); //semicolon needed here
 	for (const [tgtAddr, val] of
 	[
 		[addrL   , " 20 3C"], //left arrow

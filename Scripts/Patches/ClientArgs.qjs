@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2020-2021 Secret                                         *
+*   Copyright (C) 2020-2023 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Secret                                        *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,16 +31,14 @@
 /// \brief Change the conditional jump after the 1rag1 comparison to
 ///        JMP over the 1*1 checks
 ///
-No1and1Arg = function()
+No1and1Arg = function(_)
 {
-	const _ = 'No1and1Arg : ';
-
-	$$(_ + '1 - Find \'1rag1\'')
+	$$(_, 1, `Find the string '1rag1'`)
 	let addr = Exe.FindText("1rag1");
 	if (addr < 0)
 		throw Error("'1rag1' not found");
 
-	$$(_ + '2 - Find where it is used in a PUSH')
+	$$(_, 2, `Find where it is PUSHed`)
 	const prefix =
 		PUSH(addr)      //push offset "1rag1"
 	+	PUSH_R          //push regA
@@ -67,7 +65,7 @@ No1and1Arg = function()
 	if (addr < 0)
 		throw Error("'1rag1' not used");
 
-	$$(_ + '3 - Change the conditional jump')
+	$$(_, 3, `Change the conditional jump`)
 	Exe.SetJMP(addr + prefix.byteCount());
 
 	return true;
@@ -77,21 +75,19 @@ No1and1Arg = function()
 /// \brief Change the JZ to JMP after '/account' argument check
 ///        ignoring it's results
 ///
-IgnoreAccArg = function()
+IgnoreAccArg = function(_)
 {
-	const _ = 'IgnoreAccArg : ';
-
-	$$(_ + '1.1 - Find \'/account:\'')
+	$$(_, 1.1, `Find the string '/account:'`)
 	let addr = Exe.FindText("/account:");
 	if (addr < 0)
 		throw Error("'/account:' not found");
 
-	$$(_ + '1.2 - Find where \'/account:\' is used in a PUSH')
+	$$(_, 1.2, `Find where it is PUSHed`)
 	addr = Exe.FindHex(PUSH(addr));
 	if (addr < 0)
 		throw Error("'/account:' not used");
 
-	$$(_ + '2.1 - Find the comparison after strstr CALL')
+	$$(_, 2.1, `Find the comparison after strstr CALL`)
 	code =
 		ADD(ESP, 8)     //add esp, 8
 	+	TEST(R32, R32)  //test regA, regA
@@ -107,7 +103,7 @@ IgnoreAccArg = function()
 	if (addr2 < 0)
 		throw Error("Comparison not found.");
 
-	$$(_ + '2.2 - Replace JZ with JMP')
+	$$(_, 2.2, `Replace JZ with JMP`)
 	Exe.SetJMP(addr2 + 5);
 
 	return true;

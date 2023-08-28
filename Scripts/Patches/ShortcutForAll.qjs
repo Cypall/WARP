@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2021-06-14                                             *
-*   Last Modified : 2021-08-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Update all switches related to item type and make it go to the same case
 ///
-ShortcutForAll = function()
+ShortcutForAll = function(_)
 {
-	const _ = 'ShortcutForAll : ';
-
-	$$(_ + '1 - Find all the item type switches (there should be 2 locations in total)')
+	$$(_, 1, `Find all the item type switches (there should be 2 locations in total)`)
 	let parts = [
 		MOVZX(R32, BYTE_PTR, [EAX, POS3WC]) //movzx eax, byte ptr [eax + idxTbl]
 	,
@@ -53,7 +51,7 @@ ShortcutForAll = function()
 	if (addrs.length !== 2)
 		throw Error("Expected 2 matches for switch");
 
-	$$(_ + '2 - Remove eax*4 for all of them')
+	$$(_, 2, `Remove eax*4 for all of them`)
 	const repl = NOP + " FF 25";  //nop + jmp dword ptr [jmpTbl]
 	const offset = parts.byteCount(0);
 

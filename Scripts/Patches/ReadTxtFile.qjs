@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo                                                *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-08-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -30,14 +30,12 @@
 /// \brief Change the conditional jump to JMP after Langtype comparison
 ///        in InitMsgStrings function
 ///
-MsgStrings = function()
+MsgStrings = function(_)
 {
-	const _ = 'MsgStrings : ';
-
-	$$(_ + '1.1 - Ensure the LANGTYPE is loaded')
+	$$(_, 1.1, `Ensure the LANGTYPE is loaded`)
 	LANGTYPE.load();
 
-	$$(_ + '1.2 - Find the comparison which is at the start of the function')
+	$$(_, 1.2, `Find the comparison which is at the start of the function`)
 	let prefix, suffix;
 	if (Exe.Version === 6) //VC6
 	{
@@ -75,7 +73,7 @@ MsgStrings = function()
 	if (addr < 0)
 		throw Error("Langtype comparison not found");
 
-	$$(_ + '2 - Change the conditional jump')
+	$$(_, 2, `Change the conditional jump`)
 	Exe.SetJMP(addr + prefix.byteCount());
 
 	return true;
@@ -86,11 +84,9 @@ MsgStrings = function()
 /// \brief NOP out the conditional jump after Langtype Comparison
 ///        in ITEM_INFO::InitItemInfoTables function
 ///
-QuestDisplay = function()
+QuestDisplay = function(_)
 {
-	const _ = 'QuestDisplay : ';
-
-	$$(_ + '1 - Find where \'questID2display.txt\' is used in a PUSH')
+	$$(_, 1, `Find where 'questID2display.txt' is PUSHed`)
 	const prefix = JNE(Exe.Version < 10 ? POS3WC : WCp);
 	const suffix =
 		PUSH_0                //push 0
@@ -107,7 +103,7 @@ QuestDisplay = function()
 	if (addr < 0)
 		throw Error("'questID2display.txt' not used");
 
-	$$(_ + '2 - NOP out the JNE')
+	$$(_, 2, `NOP out the JNE`)
 	Exe.SetNOPs(addr, prefix.byteCount());
 
 	return true;

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-11-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -30,43 +30,14 @@
 /// \brief Modify the code inside UIBasicInfoWnd::NewHeight to change the limits as per user specified input file.
 ///        The code being modified is responsibles for displaying the Base & Job experience bars
 ///
-CustomBarLimits = function()
+CustomBarLimits = function(_)
 {
-	const _ = 'CustomBarLimits : ';
+	$$(_, 1, `Load the SSN & extract the EBvals`)
+	SSN.load();
+	const {refAddr, baseBegin, afterBB} = SSN.EBvals;
 
-	$$(_ + '1.1 - Find the coordinate PUSHes for Base exp bar')
+	$$(_, 2.1, `Find the base level assignment/comparison after the CALLs`)
 	let code =
-		PUSH(0x4E)   //push 4Eh
-	+	PUSH(-0xC8)  //push -0C8h
-	;
-
-	const refAddr = Exe.FindHex(code);
-	if (refAddr < 0)
-		throw Error("Base coord PUSHes missing");
-
-	$$(_ + '1.2 - Find the Job ID fetcher CALL before the first reference')
-	code =
-		MOV(ECX, POS4WC)  //mov ecx, <g_session>
-	+	CALL(ALLWC)      //call CSession::GetJobID
-	+	PUSH_EAX          //push eax
-	+	MOV(ECX, POS4WC)  //mov ecx, <g_session>
-	+	CALL(ALLWC)      //call CSession::IsThirdJob
-	;
-
-	let addr = Exe.FindLastHex(code, refAddr, refAddr - 0x120);
-	if (addr < 0)
-		throw Error("JobID CALL not found");
-
-	$$(_ + '1.3 - Extract g_session, GetJobID and save the addr to baseBegin variable')
-	const Session  = Exe.GetInt32(addr + 1);
-	const GetJobID = Exe.GetTgtAddr(addr + 6);// 5 from the MOV and 1 from opcode of CALL
-	const baseBegin = addr;
-
-	$$(_ + '1.4 - Save location after the 2nd CALL')
-	const afterBB = baseBegin + code.byteCount();
-
-	$$(_ + '2.1 - Find the base level assignment/comparison after the CALLs')
-	code =
 		Exe.Version === 6   //VC6
 	?
 		MOV(EAX, [POS3WC])  //mov eax, dword ptr [g_baseLevel]
@@ -83,14 +54,14 @@ CustomBarLimits = function()
 		CMP(R32, [POS4WC])  //cmp regA, dword ptr [g_baseLevel]
 	;
 
-	addr = Exe.FindHex(code, afterBB, afterBB + 0x100);
+	let addr = Exe.FindHex(code, afterBB, afterBB + 0x100);
 	if (addr < 0)
 		throw Error("Base level address missing");
 
-	$$(_ + '2.2 - Extract the address')
+	$$(_, 2.2, `Extract the address`)
 	const BaseLevel = Instr.FromAddr(addr).Disp; //this is easier and will remain accurate even if some changes happen in later versions
 
-	$$(_ + '2.3 - Find the ESI + const assignment between afterBB & refAddr')
+	$$(_, 2.3, `Find the ESI + const assignment between afterBB & refAddr`)
 	addr = Exe.FindHex( MOV(ECX, [ESI, POS1WC]), afterBB, refAddr); //mov ecx, dword ptr [esi + dispA]
 
 	if (addr < 0 && Exe.Version > 11) //VC14.16
@@ -99,15 +70,15 @@ CustomBarLimits = function()
 	if (addr < 0)
 		throw Error("First ESI ptr missing");
 
-	$$(_ + '2.4 - Extract the const (which is HideBase)')
+	$$(_, 2.4, `Extract the const (which is HideBase)`)
 	const HideBase = Instr.FromAddr(addr).Disp;
 
-	$$(_ + '2.5 - Calculate remaining constants')
+	$$(_, 2.5, `Calculate remaining constants`)
 	const HideJob  = HideBase + 4;
 	const FuncOff  = (Exe.Version === 6 ? 0x18 : 0x10);  //value added to [ECX] to retrieve the function address
 	const ShowBars = HideBase + FuncOff - 8;
 
-	$$(_ + '3.1 - Find the end of the base exp display code after the ESI movement')
+	$$(_, 3.1, `Find the end of the base exp display code after the ESI movement`)
 	code =
 		PUSH(0x55)            //push 55h
 	+	(Exe.Version === 6 || Exe.Version === 11
@@ -116,17 +87,17 @@ CustomBarLimits = function()
 	:                         //   OR
 		CALL(R32)             //call regC ; all others
 	)
-	+	MOV(ECX, Session)     //mov ecx, <g_session>
+	+	MOV(ECX, SSN)         //mov ecx, <g_session>
 	;
 	let addr2 = Exe.FindHex( code, addr, refAddr + 0x60);
 	if (addr2 < 0)
 		throw Error("End of Base missing");
 
-	$$(_ + '3.2 - Save the location of MOV ECX')
+	$$(_, 3.2, `Save the location of MOV ECX`)
 	const baseEnd = addr2 + code.byteCount() - 5;
 	const jobBegin = baseEnd; //MOV ECX also marks the beginning of Job Exp Display code so yea they are same
 
-	$$(_ + '3.3 - Find the job level comparison with 10')
+	$$(_, 3.3, `Find the job level comparison with 10`)
 	let delta;
 	if (Exe.BuildDate > 20170000)
 	{
@@ -156,10 +127,10 @@ CustomBarLimits = function()
 	if (addr < 0)
 		throw Error("Job level comparison missing");
 
-	$$(_ + '3.4 - Extract the Address')
+	$$(_, 3.4, `Extract the Address`)
 	const JobLevel = Instr.FromAddr(addr + delta).Disp;
 
-	$$(_ + '3.5 - Find the coordinate PUSHes for Job exp bar (job End is just after it)')
+	$$(_, 3.5, `Find the coordinate PUSHes for Job exp bar (job End is just after it)`)
 	code =
 		PUSH(0x58)           //push 58h
 	+	PUSH(-0xC8)          //push -0C8h
@@ -183,15 +154,15 @@ CustomBarLimits = function()
 	if (addr2 < 0)
 		throw Error("Job coord PUSHes missing");
 
-	$$(_ + '3.6 - Save location after the CALL as jobEnd')
+	$$(_, 3.6, `Save location after the CALL as jobEnd`)
 	const jobEnd = addr2 + code.byteCount();
 
-	$$(_ + '4.1 - Get the input file from user')
+	$$(_, 4.1, `Get the input file from user`)
 	const inFile = Exe.GetUserInput('$expBarSpec', D_InFile, "Exp Bar Spec", "Enter the Exp Bar Mapping file", "Inputs/ExpSpec.yml", {filters: YMLFILTER});
 	if (inFile === false)
 		Cancel("No mapping file specified");
 
-	$$(_ + '4.2 - Load the input file which creates the hash table mapping the id ranges to max base & job levels')
+	$$(_, 4.2, `Load the input file which creates the hash table mapping the id ranges to max base & job levels`)
 	const ExpSpec = Warp.LoadYaml(inFile);
 	if (ExpSpec === false)
 		return false;
@@ -199,15 +170,15 @@ CustomBarLimits = function()
 	else if (!IsArr(ExpSpec))
 		throw Error("Need a list of Exp Bar specifications")
 
-	$$(_ + '4.3 - Calculate size of mapping table')
+	$$(_, 4.3, `Calculate size of mapping table`)
 	const identSize = ExpSpec.reduce( (acc, hash) => acc + (IsArr(hash.IDs) ? 4 * hash.IDs.length + 2 : 0), 0);
 
-	$$(_ + '5.1 - Prepare code for base & job exp bars (will be replaced at baseBegin)')
+	$$(_, 5.1, `Prepare code for base & job exp bars (will be replaced at baseBegin)`)
 	const parts =
 	[
 		PUSH(EDX)                  //push edx
 	+	PUSH(EBX)                  //push ebx
-	+	MOV(ECX, Session)          //mov ecx, <g_session>
+	+	MOV(ECX, SSN)              //mov ecx, <g_session>
 	+	CALL(Filler(1))            //call CSession::GetJobID
 	+	MOV(EBX, Filler(2))        //mov ebx, <mapTblAddr>
 
@@ -284,18 +255,18 @@ CustomBarLimits = function()
 
 	const baseVir = Exe.Phy2Vir(baseBegin, CODE);
 
-	$$(_ + '5.2 - Calculate the target addresses & the mapTblAddr value (we will be placing it right after the JMP since we have space for it)')
+	$$(_, 5.2, `Calculate the target addresses & the mapTblAddr value (we will be placing it right after the JMP since we have space for it)`)
 	const [, _mapTblLoop, _idTblLoop, _fetchNextIDPair, _fetchNextIDTbl, _foundIDMatch, _noMatches, _lowBase, _common1, _lowJob, _common2, mapTblAddr] = MapAddrs(baseVir, parts);
 
 	const defAddr = mapTblAddr - 4; //Address for the default value.
 
-	$$(_ + '5.3 - Fill in the blanks')
+	$$(_, 5.3, `Fill in the blanks`)
 
 	//First the Jumps & CALLs
 	code = SetFillTargets( parts,
 	{
 		start  : baseVir,
-		  1    : GetJobID,
+		  1    : SSN.Funcs.GetJobID,
 		  4    : Exe.Phy2Vir(jobEnd, CODE),
 		'10,1' : _noMatches,
 		'11,1' : _fetchNextIDTbl,
@@ -316,10 +287,10 @@ CustomBarLimits = function()
 		3 : defAddr
 	});
 
-	$$(_ + '5.4 - Allocate space to add the id values')
+	$$(_, 5.4, `Allocate space to add the id values`)
 	const [free, freeVir] = Exe.Allocate(identSize);
 
-	$$(_ + '5.5 - Concatenate all the ID values and prepare the mapping')
+	$$(_, 5.5, `Concatenate all the ID values and prepare the mapping`)
 	let mapData   = ""; //will contain address pointing to set of IDs and base (16bit) & job (16bit) max levels after the address
 	let identData = ""; //will contain the set of IDs
 
@@ -349,10 +320,10 @@ CustomBarLimits = function()
 
 	mapData += ALL00;
 
-	$$(_ + '5.6 - Add the IDs at the allocated space')
+	$$(_, 5.6, `Add the IDs at the allocated space`)
 	Exe.SetHex(free, identData);
 
-	$$(_ + '5.7 - Put the function & the map at baseBegin')
+	$$(_, 5.7, `Put the function & the map at baseBegin`)
 	Exe.SetHex(baseBegin, code + mapData);
 
 	return true;
@@ -364,16 +335,14 @@ CustomBarLimits = function()
 /// \brief Inject code inside UIBasicInfoWnd::OnDraw function to make it also display the exp values
 ///        The exp values are displayed along with other info inside the "Basic Info" window when not minimized.
 ///
-ShowExpNumbers = function()
+ShowExpNumbers = function(_)
 {
-	const _ = 'ShowExpNumbers : ';
-
-	$$(_ + '1.1 - Find \'Alt+V, Ctrl+V\'')
+	$$(_, 1.1, `Find the string 'Alt+V, Ctrl+V'`)
 	let addr = Exe.FindText("Alt+V, Ctrl+V", false);
 	if (addr < 0)
 		throw Error("Reference string not found");
 
-	$$(_ + '1.2 - Find where it is PUSHed inside UIBasicInfoWnd::OnCreate function')
+	$$(_, 1.2, `Find where it is PUSHed inside UIBasicInfoWnd::OnCreate function`)
 	let code =
 		PUSH(addr)     //push offset "Alt+V, Ctrl+V"
 	+	MOV(ECX, R32)  //mov ecx, regA
@@ -383,10 +352,10 @@ ShowExpNumbers = function()
 	if (addr < 0)
 		throw Error("Reference string not used");
 
-	$$(_ + '1.3 - Set addr to location after the code')
+	$$(_, 1.3, `Set addr to location after the code`)
 	addr += code.byteCount();
 
-	$$(_ + '2.1 - Find the double PUSH pattern after the above PUSH (addresses of Total and Current Exp values are being sent as args to be filled)')
+	$$(_, 2.1, `Find the double PUSH pattern after the above PUSH (addresses of Total and Current Exp values are being sent as args to be filled)`)
 	code =
 		MOV(ECX, [R32, POS1WC])  //mov ecx, dword ptr [regB + dispB]
 	+	PUSH(POS3WC)             //push <totExp>
@@ -412,25 +381,25 @@ ShowExpNumbers = function()
 	if (pushAddr < 0)
 		throw Error("Base Exp addresses not PUSHed");
 
-	$$(_ + '2.2 - Extract the Total Exp address')
+	$$(_, 2.2, `Extract the Total Exp address`)
 	const TotExpBase = Exe.GetInt32(pushAddr + totOffset);
 
-	$$(_ + '2.3 - Set pushAddr to location after the CALL')
+	$$(_, 2.3, `Set pushAddr to location after the CALL`)
 	pushAddr += code.byteCount() + 4;	
-	
-	$$(_ + '2.4 - Extract the Current Exp address')
+
+	$$(_, 2.4, `Extract the Current Exp address`)
 	const CurExpBase = Exe.GetInt32(pushAddr - 9);
 
-	$$(_ + '2.5 - Find the double/triple PUSH pattern again after the first one (this time it is for Job Exp values)')
+	$$(_, 2.5, `Find the double/triple PUSH pattern again after the first one (this time it is for Job Exp values)`)
 	pushAddr = Exe.FindHex(code, pushAddr, pushAddr + 0x100);
 	if (pushAddr < 0)
 		throw Error("Job Exp addrs not PUSHed");
 
-	$$(_ + '2.6 - Extract the Total Exp & Current Exp addresses')
+	$$(_, 2.6, `Extract the Total Exp & Current Exp addresses`)
 	const TotExpJob = Exe.GetInt32(pushAddr + totOffset);
 	const CurExpJob = Exe.GetInt32(pushAddr + code.byteCount() - 5);
 
-	$$(_ + '3.1 - Find the correct \'SP\'')
+	$$(_, 3.1, `Find the correct 'SP'`)
 	code =
 		PUSH(Filler(1)) //push offset "SP"
 	+	PUSH(0x41)      //push 41h
@@ -439,7 +408,7 @@ ShowExpNumbers = function()
 
 	addr = Exe.FindTextN("SP").findAs( matchAddr =>
 	{
-		$$(_ + '3.2 - Find where it is PUSHed inside OnDraw function (we need to inject after this location)')
+		$$(_, 3.2, `Find where it is PUSHed inside OnDraw function (we need to inject after this location)`)
 		const found = Exe.FindHex( SwapFillers(code, 1, {1: matchAddr}) );
 		if (found > 0)
 			return found;
@@ -447,10 +416,10 @@ ShowExpNumbers = function()
 	if (!addr)
 		throw Error("PUSH 'SP' missing");
 
-	$$(_ + '3.3 - Set addr to location after PUSH 11')
+	$$(_, 3.3, `Set addr to location after PUSH 11`)
 	addr += code.byteCount();
 
-	$$(_ + '3.4 - Setup ECX movement based on the next instruction')
+	$$(_, 3.4, `Setup ECX movement based on the next instruction`)
 	///       If the UIWindow::TextOutA function CALL comes immediately after the pattern, ECX should be loaded from ESI
 	///       otherwise the next instruction is a MOV to ECX after which the CALL is expected
 	let MovECX;
@@ -467,11 +436,11 @@ ShowExpNumbers = function()
 			throw Error("TextOutA CALL not found");
 	}
 
-	$$(_ + '3.5 - Extract UIWindow::TextOutA and the location where the CALL is made (we will be hijacking the CALL)')
+	$$(_, 3.5, `Extract UIWindow::TextOutA and the location where the CALL is made (we will be hijacking the CALL)`)
 	const UIW_TextOutA = Exe.GetTgtAddr(addr + 1);
 	const injectAddr = addr;
 
-	$$(_ + '3.6 - Account for extra argument PUSHes (push 0) for more recent clients')
+	$$(_, 3.6, `Account for extra argument PUSHes (push 0) for more recent clients`)
 	let extraPush = '';
 	if (Exe.BuildDate > 20140116)
 	{
@@ -480,10 +449,10 @@ ShowExpNumbers = function()
 			extraPush += PUSH_0;
 	}
 
-	$$(_ + '3.7 - Get the text color from the user')
+	$$(_, 3.7, `Get the text color from the user`)
 	const txtColor = Exe.GetUserInput('$expTxtColor', D_Color, "Exp Num Color", "Select the color for the numbers", 0xFF0000, Object.assign({saveDefault: true}, ROC.ClrSettings));
 
-	$$(_ + '4.1 - Get the essential addresses for our code')
+	$$(_, 4.1, `Get the essential addresses for our code`)
 
 	// sprintf/wsprintfA
 	ROC.findImports();
@@ -493,7 +462,7 @@ ShowExpNumbers = function()
 	if (ddAddr < 0)
 		throw Error("Format string for exp not found");
 
-	$$(_ + '4.2 - Construct the template code for displaying the exp numbers (common for both Base & Job Exp)')
+	$$(_, 4.2, `Construct the template code for displaying the exp numbers (common for both Base & Job Exp)`)
 	let template =
 		MOV(EAX, [Filler(1)]) //mov eax, dword ptr [totExp*]
 	+	MOV(ECX, [Filler(2)]) //mov ecx, dword ptr [curExp*]
@@ -523,7 +492,7 @@ ShowExpNumbers = function()
 
 	template = SetFillTargets( template, 1, {'3,1': template.byteCount()} ); //putting the distance in JE SHORT (this is needed since byteCount can vary)
 
-	$$(_ + '4.3 - Construct the full code from the template')
+	$$(_, 4.3, `Construct the full code from the template`)
 	code =
 		CALL(Filler(5))         //call UIWindow::TextOutA
 	+	PUSH_EAX                //push eax
@@ -543,7 +512,7 @@ ShowExpNumbers = function()
 	+	JMP(Filler(6))          //jmp <retnAddr> ; i.e. (injectAddr + 5)
 	;
 
-	$$(_ + '4.4 - Prepare the arguments for auto-hook')
+	$$(_, 4.4, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		targets : {
@@ -555,7 +524,7 @@ ShowExpNumbers = function()
 		}
 	};
 
-	$$(_ + '4.5 - Add our code and jump to it from injectAddr')
+	$$(_, 4.5, `Add our code and jump to it from injectAddr`)
 	AutoHook(injectAddr, code, args);
 
 	return true;

@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2022 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-07                                             *
-*   Last Modified : 2022-03-04                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -34,17 +34,15 @@
 ///        GRFsFromIni  - User specifies the INI file name and it is used for getting the GRF file names & their order during launch.
 ///        GRFsEmbedded - User specifies an existing INI file which will be used for embedding the loading of the GRF files names in order.
 ///
-MultiGRFs = function(patchName)
+MultiGRFs = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1.1 - Ensure the DGRF object is loaded')
+	$$(_, 1.1, `Ensure the DGRF object is loaded`)
 	DGRF.load();
 
-	$$(_ + '1.2 - Retrieve the refAddr (push location)')
+	$$(_, 1.2, `Retrieve the refAddr (push location)`)
 	const addr = DGRF.RefAddr;
 
-	$$(_ + '2.1 - Find the AddPak call after the PUSH')
+	$$(_, 2.1, `Find the AddPak call after the PUSH`)
 	let code, type;
 	switch (Exe.Version)
 	{
@@ -101,22 +99,22 @@ MultiGRFs = function(patchName)
 	if (callAddr < 0)
 		throw Error("AddPak call not found");
 
-	$$(_ + '2.2 - Extract AddPak function address')
+	$$(_, 2.2, `Extract AddPak function address`)
 	const AddPak = Exe.Phy2Vir(callAddr + 5, CODE) + Exe.GetInt32(callAddr + 1);
 
-	$$(_ + '2.3 - Little trick to avoid changing 10 bytes (change the push to MOV ECX, addr)')
+	$$(_, 2.3, `Little trick to avoid changing 10 bytes (change the push to MOV ECX, addr)`)
 	Exe.SetUint8(addr, 0xB9);
 
-	$$(_ + '3.1 - Run one of the helper functions below based on the patch name')
+	$$(_, 3.1, `Run one of the helper functions below based on the patch name`)
 	///       Helper functions were made for better readability.
 	///       Only the uncommon activities are being done in the seperate functions
 	///
-	if (patchName === "GRFsFromIni")
+	if (_ === "GRFsFromIni")
 		this.useINI(callAddr, AddPak);
 	else
 		this.embedList(callAddr, AddPak);
 
-	$$(_ + '3.2 - Find \'rdata.grf\' and zero it out if present')
+	$$(_, 3.2, `Find the string 'rdata.grf' and zero it out if present`)
 	if (ROC.IsRenewal)
 		Exe.SetInt8(ROC.RGrfPhy, 0);
 
@@ -134,15 +132,15 @@ GRFsEmbedded = MultiGRFs;
 ///
 MultiGRFs.useINI = (callAddr, AddPak) =>
 {
-	const _ = 'MultiGRFs.useINI : ';
+	const _ = 'MultiGRFs.useINI';
 
-	$$(_ + '1.1 - Get the essential addresses for our function')
+	$$(_, 1.1, `Get the essential addresses for our function`)
 	ROC.findImports();
 
 	if (ROC.Kernel32 < 0)
 		throw Error("'KERNEL32.dll' not found");
 
-	$$(_ + '1.2 - Construct the function code')
+	$$(_, 1.2, `Construct the function code`)
 	let parts =
 	[
 		ENTER(0x80, 0)                           //enter 80h, 0
@@ -220,14 +218,14 @@ MultiGRFs.useINI = (callAddr, AddPak) =>
 		"Data\x00".toHex()                       //ASCII "Data"
 	];
 
-	$$(_ + '2.1 - Get the INI file name from user')
+	$$(_, 2.1, `Get the INI file name from user`)
 	let iniFile = Exe.GetUserInput('$dataINI', D_Text, "INI File path", "Enter the name of the INI file (containing GRF names)", "DATA.INI", {minLen: 1, maxLen: 20, saveDefault: true});
 	if (iniFile === false || iniFile.trim().isEmpty())
 		Cancel("No File name specified");
 
 	parts.push(" 2E 5C" + iniFile.toHex()); // .\<INI Filename>
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	const [, _loopOuter, _loopInner, _next, _codeOver, dataStrAddr, iniFileAddr, allocSize] = MapAddrs(parts);
 	const args =
 	{
@@ -249,7 +247,7 @@ MultiGRFs.useINI = (callAddr, AddPak) =>
 		isCall : true
 	};
 
-	$$(_ + '2.3 - Add our code and call it from callAddr')
+	$$(_, 2.3, `Add our code and call it from callAddr`)
 	AutoHook(callAddr, parts, args);
 };
 
@@ -260,9 +258,9 @@ MultiGRFs.useINI = (callAddr, AddPak) =>
 ///
 MultiGRFs.embedList = (callAddr, AddPak) =>
 {
-	const _ = 'MultiGRFs.embedList : ';
+	const _ = 'MultiGRFs.embedList';
 
-	$$(_ + '1.1 - Get the INI file from user to read')
+	$$(_, 1.1, `Get the INI file from user to read`)
 	const file = Exe.GetUserInput('$inpMultGRF', D_InFile, "GRF List file", "Enter your INI file (containing GRF names) to embed", "Inputs/Sample_DATA.INI");
 	if (file === false)
 		Cancel("No input file received");
@@ -274,7 +272,7 @@ MultiGRFs.embedList = (callAddr, AddPak) =>
 	if (!handle.Valid)
 		throw Error("INI file is not readable");
 
-	$$(_ + '1.2 - Read the GRF filenames from the INI file into an array')
+	$$(_, 1.2, `Read the GRF filenames from the INI file into an array`)
 	let grfNames = [];
 	while (!handle.AtEnd())
 	{
@@ -288,14 +286,14 @@ MultiGRFs.embedList = (callAddr, AddPak) =>
 	}
 	handle.Close();
 
-	$$(_ + '1.3 - Account for empty input file (atleast data.grf should be there)')
+	$$(_, 1.3, `Account for empty input file (atleast data.grf should be there)`)
 	if (grfNames.isEmpty())
 		grfNames[0] = DGRF.Name;
 
-	$$(_ + '1.4 - Remove empty indices')
+	$$(_, 1.4, `Remove empty indices`)
 	grfNames = grfNames.filter( name => name ?? false );
 
-	$$(_ + '2.1 - Construct the loading code in parts')
+	$$(_, 2.1, `Construct the loading code in parts`)
 	const suffix =
 		DGRF.MovFMgr     //mov ecx, <g_fileMgr>
 	+	CALL(Filler(1))  //call CFileMgr::AddPak
@@ -312,13 +310,13 @@ MultiGRFs.embedList = (callAddr, AddPak) =>
 
 	parts.push(RETN());
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	const args = {
 		targets : { 1 : AddPak },
 		isCall : true
 	};
 
-	$$(_ + '2.3 - Add our code and call it from callAddr')
+	$$(_, 2.3, `Add our code and call it from callAddr`)
 	AutoHook(callAddr, parts, args);
 };
 

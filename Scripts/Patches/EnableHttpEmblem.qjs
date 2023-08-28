@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Use normal buffer instead of CDClient buffer for HTTP Packet
 ///
-EnableHttpEmblem = function()
+EnableHttpEmblem = function(_)
 {
-	const _ = 'EnableHttpEmblem : ';
-
-	$$(_ + '1 - Find the code')
+	$$(_, 1, `Find the code`)
 	const code =
 		FP_START		//push ebp
 		                //mov ebp, esp
@@ -46,7 +44,7 @@ EnableHttpEmblem = function()
 	if (addr < 0)
 		throw Error("Pattern not found")
 
-	$$(_ + '2 - Change buffer addr from 6Ch to 3Ch')
+	$$(_, 2, `Change buffer addr from 6Ch to 3Ch`)
 	Exe.SetUint8(addr + 5, 0x3C);
 
 	/* Used for debug

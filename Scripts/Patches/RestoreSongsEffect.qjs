@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2021-06-10                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -30,11 +30,9 @@
 /// \brief Reconstruct songs code by borrow LandProtector's code
 ///        inside CSkill::OnProcess function.
 ///
-RestoreSongsEffect = function()
+RestoreSongsEffect = function(_)
 {
-	const _ = 'RestoreSongsEffect : ';
-
-	$$(_ + '1.1 - Find CSkill::OnProcess')
+	$$(_, 1.1, `Find CSkill::OnProcess`)
 	let prefix =
 		CALL(ALLWC)                          //call CGameActor::GetJob
 	+	ADD(EAX, -0x7E)                      //add eax,-7E
@@ -50,10 +48,10 @@ RestoreSongsEffect = function()
 	if (addr < 0)
 		throw Error("CSkill::OnProcess not found");
 
-	$$(_ + '1.2 - Get the address of switch table indices')
+	$$(_, 1.2, `Get the address of switch table indices`)
 	const idxTbl = Exe.GetUint32(addr + prefix.byteCount() + 3);
 
-	$$(_ + '2.1 - Find & borrow the code of LandProtector (case 9Dh)')
+	$$(_, 2.1, `Find & borrow the code of LandProtector (case 9Dh)`)
 	if (Exe.Version === 11)
 	{
 		prefix =
@@ -92,11 +90,11 @@ RestoreSongsEffect = function()
 	if (addr < 0)
 		throw Error("Borrow code not found");
 
-	$$(_ + '2.2 - Save the patch location and the target of the JMP as the return location')
+	$$(_, 2.2, `Save the patch location and the target of the JMP as the return location`)
 	const patchAddr = addr + prefix.byteCount();
 	const retnVir = Exe.GetTgtAddr(patchAddr + suffix.byteCount());//might as well goto the JMP target directly
 
-	$$(_ + '2.3 - Get skill id addr')
+	$$(_, 2.3, `Get skill id addr`)
 	prefix =
 		MOV(EAX, POS2WC)        //mov eax, 1094h
 	+	JNE(6)                  //jne short _ skip#1
@@ -113,10 +111,10 @@ RestoreSongsEffect = function()
 
 	const sklOffset = Exe.GetUint32(addr + prefix.byteCount() + 2);
 
-	$$(_ + '2.4 - Prepare effectID list')
+	$$(_, 2.4, `Prepare effectID list`)
 	const effectIDs = [242, 278, 279, 280, 281, 282, 283, 284, 285, 277, 286, 287, 288, 289, 290, 291, 292, 293, 294];
 
-	$$(_ + '3.1 - Prepare the code & template to insert')
+	$$(_, 3.1, `Prepare the code & template to insert`)
 	let ins =
 		PUSH_EAX                   //push eax
 	+	MOV(EAX, [ESI, sklOffset]) //mov eax,[esi + skillOffset]
@@ -133,14 +131,14 @@ RestoreSongsEffect = function()
 	;
 	const tsize = template.byteCount();
 
-	$$(_ + '3.2 - Allocate space for it and the new jump table & case codes')
+	$$(_, 3.2, `Allocate space for it and the new jump table & case codes`)
 	const size = case1Offset + effectIDs.length * (tsize + 4); //4 for the jump table itself
 	const [free, freeVir] = Exe.Allocate(size, 0x10);
 
-	$$(_ + '3.3 - Fill in the blanks')
+	$$(_, 3.3, `Fill in the blanks`)
 	ins = SwapFillers( ins, {1: freeVir + case1Offset + effectIDs.length * tsize} ); //newJmpAddrs
 
-	$$(_ + '3.4 - Construct the new switch cases & jump table')
+	$$(_, 3.4, `Construct the new switch cases & jump table`)
 	let caseCodes = "";
 	let newJmpAddrs = "";
 	let caseAddr = freeVir + case1Offset;
@@ -153,13 +151,13 @@ RestoreSongsEffect = function()
 		caseAddr += tsize;
 	}
 
-	$$(_ + '3.5 - Add at allocated space')
+	$$(_, 3.5, `Add at allocated space`)
 	Exe.SetHex(free, ins + caseCodes + newJmpAddrs);
 
-	$$(_ + '3.6 - Add a Jump to this at the patch address')
+	$$(_, 3.6, `Add a Jump to this at the patch address`)
 	Exe.SetJMP(patchAddr, freeVir);
 
-	$$(_ + '3.7 - Modify the indirect switch table to always goto our patched code')
+	$$(_, 3.7, `Modify the indirect switch table to always goto our patched code`)
 	const firstUnitID = 126;
 	const LPUnitID = 157;
 	const firstSongUnitID = 158;
