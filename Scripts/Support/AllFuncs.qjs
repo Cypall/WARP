@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 Neo-Mind                                       *
+*   Copyright (C) 2020-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-10-29                                             *
-*   Last Modified : 2021-11-01                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -174,18 +174,18 @@ SwapFillers = (str, ...args) =>
 {
 	const _ = Log.dive('SwapFillers');
 
-	$$(_ + '1.1 - Retrieve the count if provided')
+	$$(_, 1.1, `Retrieve the count if provided`)
 	const cnt = args.take_if('number', -1);
 
-	$$(_ + '1.2 - If specified as an array, then concatenate it')
+	$$(_, 1.2, `If specified as an array, then concatenate it`)
 	if (IsArr(str))
 		str = str.join('');
 
-	$$(_ + '1.3 - Ensure we actually have a string')
+	$$(_, 1.3, `Ensure we actually have a string`)
 	if (!IsStr(str))
 		return Log.rise(str);
 
-	$$(_ + '1.4 - Retrieve the id map')
+	$$(_, 1.4, `Retrieve the id map`)
 	const idMap = args.take_if('object', null);
 	if (!idMap)
 		return Log.rise(str);
@@ -195,7 +195,7 @@ SwapFillers = (str, ...args) =>
 		let idx, bc;
 		if (typeof key === 'string')
 		{
-			$$(_ + '2.1 - Split up the key to idx & bytecount if it is a string')
+			$$(_, 2.1, `Split up the key to idx & bytecount if it is a string`)
 			const parts = key.split(',');
 
 			idx = parseInt(parts[0]);
@@ -206,24 +206,24 @@ SwapFillers = (str, ...args) =>
 		}
 		else
 		{
-			$$(_ + '2.2 - Otherwise just get the idx alone and setup the default bytecount');
+			$$(_, 2.2, `Otherwise just get the idx alone and setup the default bytecount`);
 			idx = parseInt(key);
 			bc = 4;
 		}
 
-		$$(_ + '2.3 - Ensure the idx is a proper integer')
+		$$(_, 2.3, `Ensure the idx is a proper integer`)
 		if (Object.is(idx, NaN))
 			continue;
 
-		$$(_ + '2.4 - Get the dataSet corresponding to the id')
+		$$(_, 2.4, `Get the dataSet corresponding to the id`)
 		const dataSet = idMap[key];
 		if (dataSet == undefined)
 			continue;
 
-		$$(_ + '2.5 - Create the filler string to search')
+		$$(_, 2.5, `Create the filler string to search`)
 		const find = Filler(idx, bc);
 
-		$$(_ + '2.6 - Make the substitution')
+		$$(_, 2.6, `Make the substitution`)
 		str = _swap_(str, find, dataSet, cnt, bc);
 	}
 
@@ -266,30 +266,30 @@ SetFillTargets = (str, ...args) =>
 {
 	const _ = Log.dive('SetFillTargets');
 
-	$$(_ + '1.1 - Retrieve the count if provided')
+	$$(_, 1.1, `Retrieve the count if provided`)
 	const cnt = args.take_if('number', -1);
 
-	$$(_ + '1.2 - If specified as an array, then concatenate it')
+	$$(_, 1.2, `If specified as an array, then concatenate it`)
 	if (IsArr(str))
 		str = str.join('');
 
-	$$(_ + '1.3 - Ensure we actually have a string')
+	$$(_, 1.3, `Ensure we actually have a string`)
 	if (!IsStr(str))
 		return Log.rise(str);
 
-	$$(_ + '1.4 - Retrieve the id map')
+	$$(_, 1.4, `Retrieve the id map`)
 	let idMap = args.take_if('object', null);
 	if (!idMap)
 		return Log.rise(str);
 
-	$$(_ + '1.5 - Extract the start position');
+	$$(_, 1.5, `Extract the start position`);
 	const start = idMap['start'] ?? 0;
 	if (typeof start !== 'number')
 		return Log.rise(str);
 
 	delete idMap['start'];
 
-	$$(_ + '1.6 - Split the string into parts based on spacing')
+	$$(_, 1.6, `Split the string into parts based on spacing`)
 	let strParts = str.trim().split(/ +/g);
 
 	let swapped = false;
@@ -298,7 +298,7 @@ SetFillTargets = (str, ...args) =>
 		let idx, bc;
 		if (typeof key === 'string')
 		{
-			$$(_ + '2.1 - Split up the key to idx & bytecount if it is a string')
+			$$(_, 2.1, `Split up the key to idx & bytecount if it is a string`)
 			const parts = key.split(',');
 
 			idx = parseInt(parts[0]);
@@ -309,16 +309,16 @@ SetFillTargets = (str, ...args) =>
 		}
 		else
 		{
-			$$(_ + '2.2 - Otherwise just get the idx alone and setup the default bytecount');
+			$$(_, 2.2, `Otherwise just get the idx alone and setup the default bytecount`);
 			idx = parseInt(key);
 			bc = 4;
 		}
 
-		$$(_ + '2.3 - Ensure the idx is a proper integer')
+		$$(_, 2.3, `Ensure the idx is a proper integer`)
 		if (Object.is(idx, NaN))
 			continue;
 
-		$$(_ + '2.4 - Get the target corresponding to the id & ensure its an integer')
+		$$(_, 2.4, `Get the target corresponding to the id & ensure its an integer`)
 		let target = idMap[key];
 		if (target == undefined) //undefined or null
 			continue;
@@ -329,14 +329,14 @@ SetFillTargets = (str, ...args) =>
 		if (typeof target !== 'number')
 			continue;
 
-		$$(_ + '2.3 - Create the filler string to search')
+		$$(_, 2.3, `Create the filler string to search`)
 		const find = Filler(idx, bc);
 
-		$$(_ + '2.4 - Update the array')
+		$$(_, 2.4, `Update the array`)
 		swapped = _settgt_(strParts, find, target, start, cnt, bc) || swapped;
 	}
 
-	$$(_ + '3 - Reconstitute the string and return if any swap happened. Otherwise return the original')
+	$$(_, 3, `Reconstitute the string and return if any swap happened. Otherwise return the original`)
 	return Log.rise(
 		swapped
 		?	' ' + strParts.join(' ')
@@ -356,7 +356,6 @@ Wrap = v =>
 	v.join != undefined ?  v  :
 	                      [v] ;
 
-
   //=============//
  // Calculators //
 //=============//
@@ -368,7 +367,7 @@ BitWidth = v =>
 {
 	const _ = Log.dive(`BitWidth (${v})`);
 
-	$$(_ + '1 - If the value provided is a register then simply return its width')
+	$$(_, 1, `If the value provided is a register then simply return its width`)
 	if (IsReg(v))
 		return Log.rise(v.Width);
 
@@ -383,7 +382,7 @@ BitWidth = v =>
 
 		case 'number':
 
-			$$(_ + '2 - For numbers, check within specific limits for each size')
+			$$(_, 2, `For numbers, check within specific limits for each size`)
 			return Log.rise(
 				v >= -0x80 && v <= 0x7F ? 8 :
 				v >= -0x8000 && v <= 0x7FFF ? 16 :
@@ -392,13 +391,13 @@ BitWidth = v =>
 
 		case 'string':
 
-			$$(_ + '3 - For hex string return the byte count * 8')
+			$$(_, 3, `For hex string return the byte count * 8`)
 			let bc = v.byteCount();
 			if (bc >= 0)
 				return Log.rise(8 * bc);
 	}
 
-	$$(_ + '4 - Return -1 for invalid cases')
+	$$(_, 4, `Return -1 for invalid cases`)
 	return Log.rise(-1);
 };
 
@@ -448,16 +447,16 @@ CaseAddr = (num, ...args) =>
 {
 	const _ = Log.dive('CaseAddr');
 
-	$$(_ + '1.1 - Extract the arguments');
+	$$(_, 1.1, `Extract the arguments`);
 	const retnType = args.take_if('object', PHYSICAL);
 	const movzxAddr = args.shift();
 	let jmpDpAddr = args.take_if('number', null);
 	const reflect = args.take_if('boolean', false);
 
-	$$(_ + '1.2 - Extract the MOVZX instruction')
+	$$(_, 1.2, `Extract the MOVZX instruction`)
 	const movzxIns = movzxAddr ? Instr.FromAddr(movzxAddr) : null;
 
-	$$(_ + '1.3 - Ensure the address for JMP DWORD PTR is valid')
+	$$(_, 1.3, `Ensure the address for JMP DWORD PTR is valid`)
 	if (!jmpDpAddr)
 	{
 		if (!movzxIns)
@@ -466,10 +465,10 @@ CaseAddr = (num, ...args) =>
 		jmpDpAddr = movzxIns.NextAddr;
 	}
 
-	$$(_ + '1.3 - Extract the JMP DWORD PTR instruction')
+	$$(_, 1.4, `Extract the JMP DWORD PTR instruction`)
 	const jmpDpIns = Instr.FromAddr(jmpDpAddr);
 
-	$$(_ + '2.1 - Based on the case extract the byte being used in JMP DWORD PTR')
+	$$(_, 2.1, `Based on the case extract the byte being used in JMP DWORD PTR`)
 	let caseByte = num;
 	if (movzxIns)
 	{
@@ -480,14 +479,14 @@ CaseAddr = (num, ...args) =>
 		caseByte = Exe.GetUint8(offset + num, reflect);
 	}
 
-	$$(_ + '2.2 - Use the byte retrieved to extract the case target address (VIRTUAL)')
+	$$(_, 2.2, `Use the byte retrieved to extract the case target address (VIRTUAL)`)
 	const offset = Exe.Vir2Phy(jmpDpIns.Disp);
 	if (offset < 0)
 		return Log.rise(-1);
 
 	const caseAddr = Exe.GetInt32(offset + caseByte*4, reflect);
 
-	$$(_ + '2.3 - Return the physical address if VIRTUAL is not explicity requested')
+	$$(_, 2.3, `Return the physical address if VIRTUAL is not explicity requested`)
 	return Log.rise(
 		retnType === VIRTUAL
 		?	caseAddr
@@ -602,14 +601,14 @@ AutoHook = (fromAddr, codes, argMap) =>
 {
 	const _ = Log.dive(`AutoHook at [${fromAddr}] :`);
 
-	$$(_ + '1.1 - Retrieve the arguments')
+	$$(_, 1.1, `Retrieve the arguments`)
 	const {allocSize, localVals, localTgts, values, targets, postProc, procThis, procArgs, isCall, isPtr, nops, snap, srcOffset, jcOffset} = argMap;
 
-	$$(_ + '1.2 - Allocate space')
+	$$(_, 1.2, `Allocate space`)
 	const allocation = Exe.Allocate(allocSize ?? codes.byteCount(), snap ?? 0x10);
 	const [free, freeVir] = allocation;
 
-	$$(_ + '2.1 - Fill in the blanks')
+	$$(_, 2.1, `Fill in the blanks`)
 	let finalCode;
 	if (localVals)
 	{
@@ -649,7 +648,7 @@ AutoHook = (fromAddr, codes, argMap) =>
 		finalCode = SetFillTargets(finalCode, targets);
 	}
 
-	$$(_ + '2.2 - Call any post processing function defined')
+	$$(_, 2.2, `Call any post processing function defined`)
 	if (typeof postProc === 'function')
 	{
 		if (procThis)
@@ -658,10 +657,10 @@ AutoHook = (fromAddr, codes, argMap) =>
 			finalCode = postProc(finalCode, freeVir, procArgs, argMap);
 	}
 
-	$$(_ + '2.3 - Put the final code at allocated space')
+	$$(_, 2.3, `Put the final code at allocated space`)
 	Exe.SetHex(free, finalCode);
 
-	$$(_ + '2.4 - Call/Jump from specified address to the code OR update reference for Ptr calls/jmps/moves')
+	$$(_, 2.4, `Call/Jump from specified address to the code OR update reference for Ptr calls/jmps/moves`)
 	if (fromAddr)
 	{
 		const srcOff = srcOffset ?? 0;
@@ -696,7 +695,7 @@ AutoHook = (fromAddr, codes, argMap) =>
 		}
 	}
 
-	$$(_ + '2.5 - Return the allocated addresses & size')
+	$$(_, 2.5, `Return the allocated addresses & size`)
 	return Log.rise(allocation);
 };
 
@@ -732,24 +731,24 @@ ParseData = (data, scaled) =>
 {
 	const _ = Log.dive(`ParseData (${data}, ${scaled}) : `);
 
-	$$(_ + '1 - Initialize the parts')
+	$$(_, 1, `Initialize the parts`)
 	let parts = [null, null, null, -1];
 
-	$$(_ + '2 - If the data is an array then process differently')
+	$$(_, 2, `If the data is an array then process differently`)
 	if (Array.isArray(data))
 	{
-		$$(_ + '2.1 - Ensure it has 3 values and first one is a number')
+		$$(_, 2.1, `Ensure it has 3 values and first one is a number`)
 		if (data.length === 3 && typeof data[0] === 'number')
 		{
-			$$(_ + '2.2 - First copy the array as is')
+			$$(_, 2.2, `First copy the array as is`)
 			parts = data.slice();
 
-			$$(_ + '2.3 - Extract the numbers from the parts')
+			$$(_, 2.3, `Extract the numbers from the parts`)
 			const p0 = scaled ? (Math.log(data[0]) / Math.log(2)) : data[0];
 			const p1 = IsReg(data[1]) ? data[1].Index : data[1];
 			const p2 = IsReg(data[2]) ? data[2].Index : data[2];
 
-			$$(_ + '2.4 - Construct the hex string and save as the 4th element')
+			$$(_, 2.4, `Construct the hex string and save as the 4th element`)
 			if (p1 < 0 || p2 < 0) //when either is negative we need to use wildcards
 			{
 				parts[3] =
@@ -766,23 +765,23 @@ ParseData = (data, scaled) =>
 			}
 		}
 
-		$$(_ + '2.5 - Return the array')
+		$$(_, 2.5, `Return the array`)
 		return Log.rise(parts);
 	}
 
-	$$(_ + '3 - Process string type')
+	$$(_, 3, `Process string type`)
 	if (typeof data === 'string')
 	{
-		$$(_ + '3.1 - First remove any square brackets')
+		$$(_, 3.1, `First remove any square brackets`)
 		data = data.replace(/[\[ \]]+/g, '');
 
 		if (data.length > 2)
 		{
-			$$(_ + '3.2 - If more than 2 chars present then its in bitwise format')
+			$$(_, 3.2, `If more than 2 chars present then its in bitwise format`)
 
 			if (data.includes('.'))
 			{
-				$$(_ + '3.3 - Dot is wildcard for bitwise mode, if present we need to parse each part individually')
+				$$(_, 3.3, `Dot is wildcard for bitwise mode, if present we need to parse each part individually`)
 
 				let bits = data.substr(0, 2); //first 2 bits
 				if (!bits.includes(2))
@@ -805,19 +804,19 @@ ParseData = (data, scaled) =>
 
 				parts[2] = bits;
 
-				$$(_ + '3.4 - Since the data is already the hex string, save it as the fourth element')
+				$$(_, 3.4, `Since the data is already the hex string, save it as the fourth element`)
 				parts[3] = data;
 			}
 			else
 			{
-				$$(_ + '3.5 - If no wildcard then we can convert the data into a number. Next section will parse it into the parts')
+				$$(_, 3.5, `If no wildcard then we can convert the data into a number. Next section will parse it into the parts`)
 				data = parseInt(data, 2);
 			}
 		}
 
 		else if (data[0] === '?' || data[1] === '?')
 		{
-			$$(_ + '3.6 - If wild card characters (?) are present then parse each nibble individually')
+			$$(_, 3.6, `If wild card characters (?) are present then parse each nibble individually`)
 
 			if (data[0] === '?')
 			{
@@ -849,18 +848,18 @@ ParseData = (data, scaled) =>
 				parts[2] = lb & 0b111;	//Last 3 bits
 			}
 
-			$$(_ + '3.7 - And ofcourse save the data as the fourth element')
+			$$(_, 3.7, `And ofcourse save the data as the fourth element`)
 			parts[3] = data;
 		}
 
 		else
 		{
-			$$(_ + '3.8 - If no wildcards for bytes then convert to number')
+			$$(_, 3.8, `If no wildcards for bytes then convert to number`)
 			data = parseInt(data, 16);
 		}
 	}
 
-	$$(_ + '4 - Process Number type (Integer to be more precise)')
+	$$(_, 4, `Process Number type (Integer to be more precise)`)
 	if (typeof data === 'number')
 	{
 		parts[0] = (data >> 6) & 0b11; 	//First 2 bits
