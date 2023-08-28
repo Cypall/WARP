@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Andrei Karas (4144)                                 *
+*   Copyright (C) 2020-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andre (4144)                                           *
 *   Created Date  : 2020-10-02                                             *
-*   Last Modified : 2021-10-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -59,9 +59,9 @@ AlterPriority.cleanup = function(patchName)
 ///
 AlterPriority.setup = function()
 {
-	const _ = 'AlterPriority.setup : ';
+	const _ = 'AlterPriority.setup';
 
-	$$(_ + '1 - Get the function address & references')
+	$$(_, 1, `Get the function address & references`)
 	const {funcAddr, refAddrs} = GetImpRefs("SetPriorityClass", "KERNEL32.dll");
 	if (funcAddr < 0)
 		throw Error("SetPriority missing");
@@ -69,7 +69,7 @@ AlterPriority.setup = function()
 	if (refAddrs.isEmpty())
 		throw Error("SetPriority never used");
 
-	$$(_ + '2.1 - Construct the new function by parts')
+	$$(_, 2.1, `Construct the new function by parts`)
 	let parts = [ MOV(EAX, [ESP, 8]) ];  //mov eax, dword ptr [ARG.2]
 	for (const name in this.pairs)
 	{
@@ -94,16 +94,16 @@ AlterPriority.setup = function()
 	+	JMP([funcAddr])                  //jmp dword ptr [<&KERNEL32.SetPriority>]
 	;
 
-	$$(_ + '2.2 - Start the tag')
+	$$(_, 2.2, `Start the tag`)
 	Exe.BeginTag("Adjust_Sleep", true);
 
-	$$(_ + '2.3 - Allocate the space for it')
+	$$(_, 2.3, `Allocate the space for it`)
 	const [free, freeVir] = Exe.Allocate(4 + code.byteCount());
 
-	$$(_ + '2.4 - Add at allocated space')
+	$$(_, 2.4, `Add at allocated space`)
 	Exe.SetHex(free, (freeVir + 4).toHex() + code);
 
-	$$(_ + '2.5 - Change the references to access our function instead')
+	$$(_, 2.5, `Change the references to access our function instead`)
 	for (const addr of refAddrs)
 		Exe.SetUint32(Instr.FromAddr(addr).NextAddr - 4, freeVir);
 };

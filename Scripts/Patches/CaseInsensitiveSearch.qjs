@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2019-2021 CH.C (jchcc)                                   *
-*   Copyright (C) 2021-2022 Neo-Mind                                       *
+*   Copyright (C) 2019-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2022-04-03                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -32,24 +32,24 @@
 ///
 CaseInsensitiveSearch = patchName =>
 {
-	const _ = patchName + ' (CIS) : ';
+	const _ = `${patchName} (CIS)`;
 	
-	$$(_ + '1.1 - Check for existing users')
+	$$(_, 1.1, `Check for existing users`)
 	const cacheKey = 'CIS';
 	const noPrevUsers = !CACHE.hasUsers(cacheKey);
 	
-	$$(_ + '1.2 - Add the patch name to user list')
+	$$(_, 1.2, `Add the patch name to user list`)
 	CACHE.addUser(cacheKey, patchName);
 	
 	if (noPrevUsers)
 	{
-		$$(_ + '2.1 - Ensure the required functions are available')
+		$$(_, 2.1, `Ensure the required functions are available`)
 		ROC.findImports();
 		const strstr = Exe.FindFunc("strstr");
 		if (strstr < 0)
 			throw Error("strstr function missing");
 		
-		$$(_ + '2.2 - Construct the function for case-insensitive search')
+		$$(_, 2.2, `Construct the function for case-insensitive search`)
 		const parts =
 		[//0
 			FP_START                  //push ebp
@@ -87,7 +87,7 @@ CaseInsensitiveSearch = patchName =>
 		
 		const [,_gotStr, _strAvailable, StrStrIA, allocSize] = MapAddrs(parts);
 	
-		$$(_ + '2.3 - Prepare the arguments for auto-hook')
+		$$(_, 2.3, `Prepare the arguments for auto-hook`)
 		const args =
 		{
 			allocSize,
@@ -100,26 +100,26 @@ CaseInsensitiveSearch = patchName =>
 			}
 		};
 		
-		$$(_ + '3.1 - Activate the global patch')
+		$$(_, 3.1, `Activate the global patch`)
 		Exe.ActivateGlobal();
 
-		$$(_ + '3.2 - Start the tag')
+		$$(_, 3.2, `Start the tag`)
 		Exe.BeginTag(CACHE.getTag(cacheKey));
 		
-		$$(_ + '3.3 - Add the code and save it\'s address')
+		$$(_, 3.3, `Add the code and save it's address`)
 		const [, fnAddr] = AutoHook(null, parts, args);
 		
-		$$(_ + '3.4 - Save the address')
+		$$(_, 3.4, `Save the address`)
 		CACHE.put('CIS_Func', fnAddr);
 		
-		$$(_ + '3.5 - Finish the tag')
+		$$(_, 3.5, `Finish the tag`)
 		Exe.EndTag();
 		
-		$$(_ + '3.6 - Revert control back to the patch')
+		$$(_, 3.6, `Revert control back to the patch`)
 		Exe.ActivePatch = patchName;
 	}
 	
-	$$(_ + '4 - Return the function address')
+	$$(_, 4, `Return the function address`)
 	return CACHE.get('CIS_Func');
 };
 
@@ -127,14 +127,12 @@ CaseInsensitiveSearch = patchName =>
 /// \brief Make the client use StrStrIA to enable case-insensitive search 
 ///        instead of the default one using memchr & direct byte-wise comparison for Cash Shop
 ///
-InsensitiveShopSearch = patchName =>
+InsensitiveShopSearch = function(_)
 {
-	const _ = patchName + ' : ';
+	$$(_, 1.1, `Add the case insensitive search function`)
+	const fnAddr = CaseInsensitiveSearch(_);
 	
-	$$(_ + '1.1 - Add the case insensitive search function')
-	const fnAddr = CaseInsensitiveSearch(patchName);
-	
-	$$(_ + '1.2 - Find the reference code')
+	$$(_, 1.2, `Find the reference code`)
 	const code =
 		PUSH(0x42D) //push 42Dh
 	+	CALL()      //call MsgStr
@@ -143,7 +141,7 @@ InsensitiveShopSearch = patchName =>
 	
 	if (Exe.Version > 11)
 	{
-		$$(_ + '2.1 - Find the first comparison before the reference code')
+		$$(_, 2.1, `Find the first comparison before the reference code`)
 		let code =
 			CALL(ALLWC)    //call <jmp.&vcruntime##.memchr>
 		+	MOV(EDI, EAX)  //mov edi, eax
@@ -162,7 +160,7 @@ InsensitiveShopSearch = patchName =>
 		const retnAddr = Exe.Phy2Vir(hookAddr + 5, CODE);
 		const nextAddr = hookAddr + code.byteCount();
 		
-		$$(_ + '2.2 - Ensure ESI is the register containing the search pattern')
+		$$(_, 2.2, `Ensure ESI is the register containing the search pattern`)
 		
 		code =
 			MOV(R32, ESI) //mov regA, esi
@@ -172,7 +170,7 @@ InsensitiveShopSearch = patchName =>
 		if (addr < 0)
 			throw Error("Register is incorrect");
 		
-		$$(_ + '2.3 - Find the code after comparison loop')
+		$$(_, 2.3, `Find the code after comparison loop`)
 		code =
 			SUB(EDI, [EBP, NEG2WC]) //sub edi, dword ptr [LOCAL.x]
 		+	CMP(EDI, -1)            //cmp edi, -1
@@ -183,22 +181,22 @@ InsensitiveShopSearch = patchName =>
 		if (jmpAddr < 0)
 			throw Error("Jump target missing");
 		
-		$$(_ + '3.1 - Construct the reroute code')
+		$$(_, 3.1, `Construct the reroute code`)
 		code =
 			MOV([ESP, 4], ESI)  //mov dword ptr [ARG.2], esi
 		+	PUSH(retnAddr)      //push <retnAddr>
 		+	JMP(Filler(1))      //jmp <fnAddr>
 		;
 		
-		$$(_ + '3.2 - Add the code and jump to it from hookAddr')
+		$$(_, 3.2, `Add the code and jump to it from hookAddr`)
 		AutoHook(hookAddr, code, {targets : {1 : fnAddr}});
 		
-		$$(_ + '3.3 - Setup the direct jump after JE')
+		$$(_, 3.3, `Setup the direct jump after JE`)
 		Exe.SetJMP(nextAddr, jmpAddr, PHYSICAL);
 	}
 	else
 	{
-		$$(_ + '4.1 - Find the correct reference pattern amongst the matches')
+		$$(_, 4.1, `Find the correct reference pattern amongst the matches`)
 		let addr = addrs.length > 1 ?
 			addrs.find(memAddr => Exe.FindHex(PUSH(5) + PUSH(0) + PUSH(0xCE5), memAddr + 10, memAddr + 0x80) > 0) :
 			addrs[0];
@@ -206,7 +204,7 @@ InsensitiveShopSearch = patchName =>
 		if (!addr)
 			throw Error("No valid reference found");
 		
-		$$(_ + '4.2 - Find the comparison before the reference')
+		$$(_, 4.2, `Find the comparison before the reference`)
 		let parts =
 		[//0
 			PUSH_0                  //push 0
@@ -222,15 +220,15 @@ InsensitiveShopSearch = patchName =>
 		if (addr < 0)
 			throw Error("Comparison missing");
 		
-		$$(_ + '4.3 - Calculate the argCount')
+		$$(_, 4.3, `Calculate the argCount`)
 		const opcode = Exe.GetUint8(addr - 1);
 		const argCount = (opcode >= 0x50 && opcode <= 0x57) ? 3 : 2;
 		
-		$$(_ + '4.4 - Calculate the hookAddr & retnAddr')
+		$$(_, 4.4, `Calculate the hookAddr & retnAddr`)
 		const hookAddr = addr + parts.byteCount(0);
 		const retnAddr = Exe.Phy2Vir(hookAddr + 5, CODE);
 		
-		$$(_ + '5.1 - Construct the reroute code')
+		$$(_, 5.1, `Construct the reroute code`)
 		parts =
 		[//0
 			PUSH(ECX)                      //push ecx
@@ -250,7 +248,7 @@ InsensitiveShopSearch = patchName =>
 		
 		const [, _found, _restore, allocSize] = MapAddrs(parts);
 		
-		$$(_ + '5.2 - Prepare the arguments for auto-hook')
+		$$(_, 5.2, `Prepare the arguments for auto-hook`)
 		const args =
 		{
 			localTgts : {
@@ -263,7 +261,7 @@ InsensitiveShopSearch = patchName =>
 			}
 		}
 		
-		$$(_ + '5.3 - Add the code and jump to it from hookAddr')
+		$$(_, 5.3, `Add the code and jump to it from hookAddr`)
 		AutoHook(hookAddr, parts, args);
 	}
 	
@@ -275,14 +273,12 @@ InsensitiveShopSearch = patchName =>
 /// \brief Make the client use StrStrIA to enable case-insensitive search 
 ///        instead of the _mbsstr for Storage
 ///
-InsensitiveStorageSearch = patchName =>
+InsensitiveStorageSearch = function(_)
 {
-	const _ = patchName + ' : ';
+	$$(_, 1, `Add the case insensitive search function`)
+	const fnAddr = CaseInsensitiveSearch(_);
 	
-	$$(_ + '1 - Add the case insensitive search function')
-	const fnAddr = CaseInsensitiveSearch(patchName);
-	
-	$$(_ + '2.1 - Find string search for storage')
+	$$(_, 2.1, `Find string search for storage`)
 	const prefix =
 		PUSH(ECX)               //push ecx
 	+	(Exe.Version > 11
@@ -309,7 +305,7 @@ InsensitiveStorageSearch = patchName =>
 	
 	addr += prefix.byteCount();
 	
-	$$(_ + '2.2 - Redirect the call to our function')
+	$$(_, 2.2, `Redirect the call to our function`)
 	Exe.SetCALL(addr, fnAddr, 1); //1 NOP afterwards
 	
 	return true;

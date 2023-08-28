@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN                                              *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-07-25	                                           *
+*   Last Modified : 2023-08-26	                                           *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief NOP out the conditional jump after comparison inside CSession::IsOnlyEnglish
 ///
-AlwaysAscii = function()
+AlwaysAscii = function(_)
 {
-	const _ = 'AlwaysAscii : '
-
-	$$(_ + '1 - Find the comparison')
+	$$(_, 1, `Find the comparison`)
 	let code;
 	if (Exe.Version <= 11) //VC6 - VC11
 	{
@@ -55,7 +53,7 @@ AlwaysAscii = function()
 	if (addr < 0)
 		throw Error("IsOnlyEnglish not found");
 
-	$$(_ + '2 - NOP out the jump')
+	$$(_, 2, `NOP out the jump`)
 	Exe.SetNOPs(addr + 4, 2);
 
 	return true;

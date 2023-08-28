@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2021-08-24                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 ///
 /// \brief Change the Guild EXP limit from 50 to custom value in UIGuildPositionManageWnd_virt136
 ///
-CustomGuildExpLimit = function()
+CustomGuildExpLimit = function(_)
 {
-	const _ = 'CustomGuildExpLimit : ';
-
-	$$(_ + '1 - Find the comparison')
+	$$(_, 1, `Find the comparison`)
 	const parts =
 	[
 		TEST(EAX, EAX)    //test eax, eax
@@ -58,13 +56,13 @@ CustomGuildExpLimit = function()
 	if (addr < 0)
 		throw Error("Limit checker missing");
 
-	$$(_ + '2.1 - Get the new value from user')
+	$$(_, 2.1, `Get the new value from user`)
 	const varName = '$guildExpLimit';
 	const newLimit = Exe.GetUserInput(varName, D_Uint8, "Exp Limit", "Enter new guild exp limit", 50, {max: 120});
 	if (newLimit === false)
 		Cancel("Exp Limit", 50);
 
-	$$(_ + '2.2 - Set the new limit')
+	$$(_, 2.2, `Set the new limit`)
 	Exe.SetFromVar(addr + parts.byteCount(0) + 2, varName);
 
 	return true;

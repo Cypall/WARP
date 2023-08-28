@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2015-2021 Ai4rei/AN                                      *
-*   Copyright (C) 2015-2021 Secret                                         *
+*   Copyright (C) 2015-2023 Ai4rei/AN                                      *
+*   Copyright (C) 2015-2023 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN, Secret                                      *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 /// \brief Remove Doram race from character creation UI.
 ///        Special thanks to @Ai4Rei for the original hex sequences.
 ///
-NoDoramCreation = function()
+NoDoramCreation = function(_)
 {
-	const _ = 'NoDoramCreation : ';
-
-	$$(_ + '1.1 - Find the first pattern')
+	$$(_, 1.1, `Find the first pattern`)
 	let code =
 		PUSH([EDI, WCp]) //push dword ptr [edi + disp8A]
 	+	MOV(ECX, EDI)	 //mov ecx, edi
@@ -47,10 +45,10 @@ NoDoramCreation = function()
 	if (addr < 0)
 		throw Error("First Pattern missing");
 
-	$$(_ + '1.2 - Swap the first PUSH with push 0')
+	$$(_, 1.2, `Swap the first PUSH with push 0`)
 	Exe.SetHex(addr, NOP + PUSH_0);
 
-	$$(_ + '2.1 - Find the second pattern (with the MOV)')
+	$$(_, 2.1, `Find the second pattern (with the MOV)`)
 	code =
 		MOV([EBP, NEG1WC], 0) //mov dword ptr [LOCAL.z], 0
 	+	MOV([EBP, NEG1WC], 0) //mov dword ptr [LOCAL.y], 0
@@ -62,10 +60,10 @@ NoDoramCreation = function()
 	if (addr < 0)
 		throw Error("2nd pattern (3 MOV) missing");
 
-	$$(_ + '2.2 - Point addr to position of PUSH 1')
+	$$(_, 2.2, `Point addr to position of PUSH 1`)
 	addr += code.byteCount() - 2;
 
-	$$(_ + '2.3 - Find the XOR code to jump to')
+	$$(_, 2.3, `Find the XOR code to jump to`)
 	code =
 		XOR(ESI, ESI)			//xor esi, esi
 	+	LEA(EAX, [EDI, POS2WC]) //lea eax, [edi + dispA]
@@ -76,10 +74,10 @@ NoDoramCreation = function()
 	if (addr2 < 0)
 		throw Error("XOR pattern missing");
 
-	$$(_ + '2.4 - Set a JMP to addr2 from addr')
+	$$(_, 2.4, `Set a JMP to addr2 from addr`)
 	Exe.SetJMP(addr, addr2, PHYSICAL);
 
-	$$(_ + '3.1 - Find the 3rd pattern')
+	$$(_, 3.1, `Find the 3rd pattern`)
 	code =
 		MOV(ECX, [EBP, -200]) 	//mov ecx, dword ptr [LOCAL.z]
 	+	INC(ECX)				//inc ecx
@@ -92,7 +90,7 @@ NoDoramCreation = function()
 	if (addr < 0)
 		throw Error("3rd pattern missing");
 
-	$$(_ + '3.2 - NOP out the pattern after it (needs further investigation)')
+	$$(_, 3.2, `NOP out the pattern after it (needs further investigation)`)
 	Exe.SetNOPs(addr + code.byteCount(), 6);
 
 	return true;

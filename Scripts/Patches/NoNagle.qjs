@@ -22,26 +22,24 @@
 *                                                                          *
 *   Author(s)     : Shinryo                                                *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2022-04-03                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Change all WS2_32.socket() calls with custom function that sets up TCP_NODELAY
 ///
-NoNagle = function()
+NoNagle = function(_)
 {
-	const _ = 'NoNagle : ';
-
-	$$(_ + '1.1 - Find \'ws2_32.dll\'')
+	$$(_, 1.1, `Find the string 'ws2_32.dll'`)
 	const WS2_32 = Exe.FindText("ws2_32.dll");
 	if (WS2_32 < 0)
 		throw Error("'ws2_32.dll' not found");
 
-	$$(_ + '1.2 - Get the essential addresses for our function')
+	$$(_, 1.2, `Get the essential addresses for our function`)
 	ROC.findImports();
 
-	$$(_ + '1.3 - Get the address and references of socket function')
+	$$(_, 1.3, `Get the address and references of socket function`)
 	const {funcAddr : WS2_socket, refAddrs} = GetImpRefs("socket", "ws2_32.dll", 23);
 	if (WS2_socket < 0)
 		throw Error("'socket' function not found");
@@ -49,7 +47,7 @@ NoNagle = function()
 	if (refAddrs == undefined)
 		throw Error("'socket' reference missing");
 
-	$$(_ + '2.1 - Construct our function to override with')
+	$$(_, 2.1, `Construct our function to override with`)
 	const parts =
 	[//0
 		Filler(1)                 //Address to be used in CALL dword ptr and JMP dword ptr replacements
@@ -95,7 +93,7 @@ NoNagle = function()
 
 	const [, fnAddr, _return, allocSize] = MapAddrs(parts);
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		allocSize,
@@ -108,7 +106,7 @@ NoNagle = function()
 		isPtr : true
 	};
 
-	$$(_ + '2.3 - Add our code and update the references')
+	$$(_, 2.3, `Add our code and update the references`)
 	AutoHook(refAddrs, parts, args);
 
 	return true;

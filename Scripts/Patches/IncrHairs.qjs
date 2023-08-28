@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2021 Ai4rei/AN                                      *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
+*   Copyright (C) 2013-2023 Ai4rei/AN                                      *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,18 +23,18 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN, Neo-Mind                                    *
 *   Created Date  : 2021-02-24                                             *
-*   Last Modified : 2021-11-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Makes the respective sprites & palettes use the acutal numbers instead of the hard-coded tables.
 ///
-IncrHairs = function(patchName)
+IncrHairs = function(_)
 {
-	this.stage1(patchName); //for the head sprites & palettes
+	this.stage1(_); //for the head sprites & palettes
 	if (Exe.Version > 6)
-		this.stage2(patchName); //for the mid-headgear sprites dependent on hairstyles.
+		this.stage2(_); //for the mid-headgear sprites dependent on hairstyles.
 
 	return true;
 };
@@ -44,20 +44,20 @@ IncrHairs = function(patchName)
 ///
 IncrHairs.stage1 = patchName =>
 {
-	const _ = patchName + ' (Stage 1) : ';
+	const _ = `${patchName} (Stage 1)`;
 
-	$$(_ + '1.1 - Find the format strings using a common part')
+	$$(_, 1.1, `Find the format strings using a common part`)
 	const addrs = Exe.FindTextN("\\\xB8\xD3\xB8\xAE\xC5\xEB\\%s\\%s", PHYSICAL, false, false);
 	if (addrs.isEmpty())
 		throw Error("Format string(s) missing");
 
-	$$(_ + '1.2 - Extract the string addresses')
+	$$(_, 1.2, `Extract the string addresses`)
 	const strAddrs = addrs.map(addr => (Exe.GetUint8(addr - 1) > 0 ? addr - 6 : addr));
 
-	$$(_ + '1.3 - Detect newer clients with Doram')
+	$$(_, 1.3, `Detect newer clients with Doram`)
 	const doramOn = addrs[0] == strAddrs[0];
 
-	$$(_ + '1.4 - Find the format string for the palette (unless shared head palette is ON)')
+	$$(_, 1.4, `Find the format string for the palette (unless shared head palette is ON)`)
 	let addr = -1;
 	const fmtPrefix = "\xB8\xD3\xB8\xAE\\\xB8\xD3\xB8\xAE";
 	if (Exe.Version <= 9) //VC6 & VC9
@@ -69,52 +69,65 @@ IncrHairs.stage1 = patchName =>
 	if (addr < 0)
 		throw Error("Palette format string missing");
 
-	$$(_ + '1.5 - Add to the strAddrs')
+	$$(_, 1.5, `Add to the strAddrs`)
 	strAddrs.push(addr);
 
-	$$(_ + '1.6 - Get the limit from user or set it to 65k based on the patch')
+	$$(_, 1.6, `Get the status of shared head palette patches`)
 	const isPalShared = Warp.GetPatchState("HeadPalMF") || Warp.GetPatchState("HeadPalUnisex");
-	if (patchName === "IncrHairStyles")
-	{
-		IH_Max = Exe.GetUserInput('$maxHairs', D_Uint16, "Limit input", "Enter the maximum no of hairstyles", 100, {saveDefault: true});
-		if (IH_Max === false)
-			Cancel("Limit reverted to default");
-		
-		IH_Max = parseInt(IH_Max); //temporary fix for strings
-	}
-	else if (patchName === "Allow65kHairs")
-	{
-		IH_Max = 65535;
-	}
 
-	$$(_ + '2 - Prep the lambda function for fixing comparisons')
+	$$(_, 1.7, `Get the limit from user or set it to 65k based on the patch`)
+	let maxHairs;
+	switch (patchName)
+	{
+		case "IncrHairStyles":
+		{
+			maxHairs = Exe.GetUserInput('$maxHairs', D_Uint16, "Limit input", "Enter the maximum no of hairstyles", 100, {saveDefault: true});
+			if (maxHairs === false)
+				Cancel("Limit reverted to default");
+
+			break;
+		}
+		case "Allow65kHairs":
+		{
+			maxHairs = 65535;
+			break;
+		}
+		default:
+		{
+			maxHairs = CACHE.get('IH_Max');
+			break;
+		}
+	}
+	CACHE.put('IH_Max', maxHairs);
+
+	$$(_, 2, `Prep the lambda function for fixing comparisons`)
 	const fixCmp = (addr) =>
 	{
-		if (IH_Max === 65535)
+		if (maxHairs === 65535)
 		{
-			$$(_ + '2.1 - For highest limit just enforce the conditional jump after the CMP')
+			$$(_, 2.1, `For highest limit just enforce the conditional jump after the CMP`)
 			Exe.SetJMP(addr + 3);
 		}
 
-		else if (IH_Max <= 0x7F)
+		else if (maxHairs <= 0x7F)
 		{
-			$$(_ + '2.2 - For 1 byte limits directly alter the limit value used')
-			Exe.SetInt16(addr + 2, IH_Max | 0x7C00); //7C to make it JLE in case it isnt.
+			$$(_, 2.2, `For 1 byte limits directly alter the limit value used`)
+			Exe.SetInt16(addr + 2, maxHairs | 0x7C00); //7C to make it JLE in case it isnt.
 		}
 
 		else
 		{
-			$$(_ + '2.3 - For multi byte limits, extract the register used')
+			$$(_, 2.3, `For multi byte limits, extract the register used`)
 			const reg = R32.List[Exe.GetUint8(addr + 1) & 0x7];
 
-			$$(_ + '2.4 - Construct the code for comparison')
+			$$(_, 2.4, `Construct the code for comparison`)
 			code =
-				CMP(reg, IH_Max) //cmp reg, <maxHairs>
+				CMP(reg, maxHairs) //cmp reg, <maxHairs>
 			+	JA(Filler(1))    //ja <defAddr>
 			+	JMP(Filler(2))   //jmp <validAddr>
 			;
 
-			$$(_ + '2.5 - Prepare the arguments for auto-hook')
+			$$(_, 2.5, `Prepare the arguments for auto-hook`)
 			const args =
 			{
 				snap : 1,
@@ -124,58 +137,58 @@ IncrHairs.stage1 = patchName =>
 				}
 			};
 
-			$$(_ + '2.6 - Add our code and jump to it from addr')
+			$$(_, 2.6, `Add our code and jump to it from addr`)
 			AutoHook(addr, code, args);
 		}
 
-		$$(_ + '2.9 - Change the default value to 2 instead of 0D or 6')
+		$$(_, 2.7, `Change the default value to 2 instead of 0D or 6`)
 		let ins = Instr.FromAddr(addr + 5);
 		ins.Immd = 2;
 		Exe.SetHex(ins.Addr, ins);
 	};
 
-	$$(_ + '3 - Prep the lambda function for table fixes')
+	$$(_, 3, `Prep the lambda function for table fixes`)
 	const fixTbl = (addr) =>
 	{
-		$$(_ + '3.1 - Extract the instruction')
+		$$(_, 3.1, `Extract the instruction`)
 		let ins = Instr.FromAddr(addr);
 
-		$$(_ + '3.2 - Update the ModRM to not use the 4*reg part')
+		$$(_, 3.2, `Update the ModRM to not use the 4*reg part`)
 		ins.MRM.update(null, null, ins.SIB.Base);
 
-		$$(_ + '3.3 - Change the SIB to 90h (quick hack to set a NOP at end)')
+		$$(_, 3.3, `Change the SIB to 90h (quick hack to set a NOP at end)`)
 		ins.SIB.Data = 0x90;
 
-		$$(_ + '3.4 - Replace the instruction')
+		$$(_, 3.4, `Replace the instruction`)
 		Exe.SetHex(ins.Addr, ins);
 	};
 
 	strAddrs.forEach( (memAddr, idx) =>
 	{
-		const __ = `${_} [${idx}] `;
+		const __ = `${_} [${idx}]`;
 
 		const isLast = idx === strAddrs.length-1;
 
 		if (!isLast || !isPalShared)
 		{
-			$$(__ + '4.1 - Retrieve the string & get the position of the 2nd %s')
+			$$(__, 4.1, `Retrieve the string & get the position of the 2nd %s`)
 			const fmt = Exe.GetText(memAddr);
 			const pos = fmt.indexOf("%s", isLast ? 0 : fmt.indexOf("%s") + 1);
 
-			$$(__ + '4.2 - Change the %s to %u')
+			$$(__, 4.2, `Change the %s to %u`)
 			Exe.SetInt8(memAddr + pos + 1, 0x75);
 		}
 
-		$$(__ + '4.3 - Find where the string is used in a PUSH')
+		$$(__, 4.3, `Find where the string is PUSHed`)
 		const strVir = Exe.Phy2Vir(memAddr);
 		const hookAddr = Exe.FindHex(PUSH(strVir));
 		if (hookAddr < 0)
 			throw Error("Format string not used");
 
-		$$(__ + '4.4 - Retrieve the stack register')
+		$$(__, 4.4, `Retrieve the stack register`)
 		const sreg = ROC.StkReg; //EBP or ESP depending on FP
 
-		$$(__ + '4.5 - Find the start of the function')
+		$$(__, 4.5, `Find the start of the function`)
 		let code, addr = -1, type; //type is used to find the stack offset later
 		if (Exe.BuildDate < 20111000)
 		{
@@ -219,10 +232,10 @@ IncrHairs.stage1 = patchName =>
 		if (addr < 0)
 			throw Error("Function start missing");
 
-		$$(__ + '4.6 - Save the address after the code')
+		$$(__, 4.6, `Save the address after the code`)
 		const beginAddr = addr + code.byteCount();
 
-		$$(__ + '4.7 - Find the limiting comparison for hairstyle')
+		$$(__, 4.7, `Find the limiting comparison for hairstyle`)
 		const prefix =
 			" [01111.00] 05" //jl/js short _skip#1
 		+	CMP(R32, WCp)    //cmp regA, <limit>
@@ -239,10 +252,10 @@ IncrHairs.stage1 = patchName =>
 		if (addr < 0 && !isLast)
 			throw Error("Limit checker missing");
 
-		$$(__ + '4.8 - Fix the CMP')
+		$$(__, 4.8, `Fix the CMP`)
 		fixCmp(addr + 2);
 
-		$$(__ + '4.9 - Repeat when doram specific section is present (only for the spr & act)')
+		$$(__, 4.9, `Repeat when doram specific section is present (only for the spr & act)`)
 		if (idx === 0 && doramOn)
 		{
 			addr = Exe.FindHex(prefix + suffix, addr + 5, addr + 0xB0);
@@ -250,14 +263,14 @@ IncrHairs.stage1 = patchName =>
 				fixCmp(addr + 2);
 		}
 
-		$$(__ + '4.10 - Find the table assignments (MOV or LEA regA, [regB*4 + regC])')
+		$$(__, 4.10, `Find the table assignments (MOV or LEA regA, [regB*4 + regC])`)
 		const isLEA = !isLast && strAddrs.length == 3 && Exe.BuildDate > 20110922;
 		code = isLEA
 			? LEA(R32, [4, R32, R32])
 			: MOV(R32, [4, R32, R32])
 			;
 
-		$$(__ + '4.11 - Filter out the false matches')
+		$$(__, 4.11, `Filter out the false matches`)
 		const addrs = Exe.FindHexN(code, beginAddr, hookAddr).filter(addr =>
 		{
 			const ins = Instr.FromAddr(addr);
@@ -291,12 +304,15 @@ IncrHairs.stage1 = patchName =>
 		if (addrs.isEmpty())
 			throw Error("Table fetchers not found");
 
-		$$(__ + '4.12 - Fix the tables')
+		$$(__, 4.12, `Fix the tables`)
 		addrs.forEach( fixTbl );
 
 		if (!isLast || !isPalShared)
 		{
-			$$(__ + '5.1 - Calculate the base stack offset for retrieving the argument')
+			if (isLast)
+				Exe.BeginTag('SHP');
+
+			$$(__, 5.1, `Calculate the base stack offset for retrieving the argument`)
 			let offset;
 			if (ROC.HasFP)
 			{
@@ -347,7 +363,7 @@ IncrHairs.stage1 = patchName =>
 				}
 			}
 
-			$$(__ + '5.2 - Construct the function argument required (which contains the hairstyle number or a pointer to it - in the case of spr/act)')
+			$$(__, 5.2, `Construct the function argument required (which contains the hairstyle number or a pointer to it - in the case of spr/act)`)
 			const arg = Exe.BuildDate < 20111108
 				?  [sreg, offset + 4 * (isLast ? 1 : 2)]
 				:  [sreg, offset + 4 * (isLast ? 2 : 5)]
@@ -355,7 +371,7 @@ IncrHairs.stage1 = patchName =>
 
 			offset = isLast ? 4 : 8;
 
-			$$(__ + '5.3 - Construct our code')
+			$$(__, 5.3, `Construct our code`)
 			code =
 				PUSH_EAX          //push eax
 			+	ADD(ESP, offset)  //add esp, 4/8
@@ -373,7 +389,7 @@ IncrHairs.stage1 = patchName =>
 			+	JMP(Filler(1))    //jmp <retnAddr> ; Return Address is after the PUSH
 			;
 
-			$$(__ + '5.4 - Prepare the arguments for auto-hook')
+			$$(__, 5.4, `Prepare the arguments for auto-hook`)
 			const args =
 			{
 				targets : {
@@ -381,26 +397,26 @@ IncrHairs.stage1 = patchName =>
 				}
 			};
 
-			$$(__ + '5.5 - Add our code and jump to it from hookAddr')
+			$$(__, 5.5, `Add our code and jump to it from hookAddr`)
 			AutoHook(hookAddr, code, args);
 
 			if (isLast && doramOn)
 			{
-				$$(__ + '6.1 - For doram palettes find the seperate format string')
+				$$(__, 6.1, `For doram palettes find the seperate format string`)
 				const newStrAddr = Exe.FindText("%s\\" + fmtPrefix + "%s_%s_%d.pal", PHYSICAL);
 
 				if (newStrAddr > 0)
 				{
-					$$(__ + '6.2 - Change the second %s to %u')
+					$$(__, 6.2, `Change the second %s to %u`)
 					Exe.SetInt8(newStrAddr + 4 + fmtPrefix.length, 0x75);
 
-					$$(__ + '6.3 - Find where it is PUSHed before the original format string PUSH')
+					$$(__, 6.3, `Find where it is PUSHed before the original format string PUSH`)
 					const newStrPush = PUSH(Exe.Phy2Vir(newStrAddr));
 					const newHookAddr = Exe.FindLastHex(newStrPush, hookAddr, beginAddr);
 					if (newHookAddr < 0)
 						throw Error("Second palette format string not PUSHed");
 
-					$$(__ + '6.4 - Construct the code for doram palette')
+					$$(__, 6.4, `Construct the code for doram palette`)
 					const code =
 						PUSH_EAX          //push eax
 					+	ADD(ESP, 8)       //add esp, 8
@@ -412,7 +428,7 @@ IncrHairs.stage1 = patchName =>
 					+	JMP(Filler(1))    //jmp <newRetnAddr> ; after the original PUSH i.e. newHookAddr + 5
 					;
 
-					$$(__ + '6.5 - Prepare the arguments for auto-hook')
+					$$(__, 6.5, `Prepare the arguments for auto-hook`)
 					const args =
 					{
 						targets : {
@@ -420,10 +436,13 @@ IncrHairs.stage1 = patchName =>
 						}
 					};
 
-					$$(__ + '6.6 - Add our code and jump to it from newHookAddr')
+					$$(__, 6.6, `Add our code and jump to it from newHookAddr`)
 					AutoHook(newHookAddr, code, args);
 				}
 			}
+
+			if (isLast)
+				Exe.EndTag();
 		}
 	});
 };

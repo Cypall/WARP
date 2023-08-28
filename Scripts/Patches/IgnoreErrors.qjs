@@ -1,9 +1,9 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2017-2021 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2021 X-EcutiOnner (xex.ecutionner@gmail.com)        *
-*   Copyright (C) 2020-2021 Ai4rei/AN                                      *
+*   Copyright (C) 2017-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
+*   Copyright (C) 2020-2023 Ai4rei/AN                                      *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -25,23 +25,23 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Andrei (4144), X-EcutiOnner, Ai4rei/AN        *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
+
+// TODO - Provide option to completely ignore or Sent to OutputDebugStringA function for all the patches.
 
 ///
 /// \brief Modify ErrorMsg function to send the error message using OutputDebugStringA instead of showing the MessageBox
 ///
-IgnoreRsrcErr = function()
+IgnoreRsrcErr = function(_)
 {
-	const _ = 'IgnoreRsrcErr : ';
-
-	$$(_ + '1.1 - Find the common error string')
+	$$(_, 1.1, `Find the common error string`)
 	let addr = Exe.FindText("Failed to load Winsock library!");
 	if (addr < 0)
 		throw Error("Winsock error string missing");
 
-	$$(_ + '1.2 - Find where it is PUSHed')
+	$$(_, 1.2, `Find where it is PUSHed`)
 	let code =
 		PUSH(addr)  //push offset "Failed to load Winsock library!"
 	+	CALL()      //call ErrorMsg
@@ -51,18 +51,18 @@ IgnoreRsrcErr = function()
 	if (addr < 0)
 		throw Error("Winsock error string not used");
 
-	$$(_ + '1.3 - Go inside the ErrorMsg function')
+	$$(_, 1.3, `Go inside the ErrorMsg function`)
 	addr = Exe.GetTgtAddr(addr + 6, PHYSICAL);
 
-	$$(_ + '2.1 - Find the GDIFlip CALL at the beginning of the function')
+	$$(_, 2.1, `Find the GDIFlip CALL at the beginning of the function`)
 	addr = Exe.FindHex( CALL(NEG3WC), addr, addr + 10);
 	if (addr < 0)
 		throw Error("GDIFlip CALL missing");
 
-	$$(_ + '2.2 - Set the address to after the call')
+	$$(_, 2.2, `Set the address to after the call`)
 	addr += 5;
 
-	$$(_ + '2.3 - Prep code to replace with (for calling OutputDebugStringA & stack restoration)')
+	$$(_, 2.3, `Prep code to replace with (for calling OutputDebugStringA & stack restoration)`)
 	ROC.findImports();
 
 	code =
@@ -86,20 +86,18 @@ IgnoreRsrcErr = function()
 /// \brief Change the code used to show message box when CFile::Open result status is false (inside CPaletteRes::Load function)
 ///        into reporting with OutputDebugStringA instead.
 ///
-IgnorePalErr = function()
+IgnorePalErr = function(_)
 {
-	const _ = 'IgnorePalErr : ';
-
-	$$(_ + '1.1 - Ensure IgnoreRsrcErr is not already ON (it would already be covered in that case)')
+	$$(_, 1.1, `Ensure IgnoreRsrcErr is not already ON (it would already be covered in that case)`)
 	if (!Warp.TestMode && Warp.GetPatchState("IgnoreRsrcErr"))
 		Cancel("'Ignore Resource Errors' is ON and covers Palette errors as well");
 
-	$$(_ + '1.2 - Find the error message')
+	$$(_, 1.2, `Find the error message`)
 	const msgAddr = Exe.FindText("CPaletteRes :: Cannot find File : ");
 	if (msgAddr < 0)
 		throw Error("CPaletteRes string not found");
 
-	$$(_ + '1.3 - Find where its PUSHed/assigned')
+	$$(_, 1.3, `Find where its PUSHed/assigned`)
 	let code = PUSH(msgAddr);  //PUSH OFFSET addr; ASCII "CPaletteRes :: Cannot find File : "
 
 	let addr = Exe.FindHex(code + LEA());   //lea ecx, [LOCAL.x]
@@ -114,7 +112,7 @@ IgnorePalErr = function()
 	if (addr < 0)
 		throw Error("CPaletteRes string not PUSHed/assigned");
 
-	$$(_ + '2.1 - Find the CALL to CFile::Open and its result comparison before the PUSH (within 0x100 bytes)')
+	$$(_, 2.1, `Find the CALL to CFile::Open and its result comparison before the PUSH (within 0x100 bytes)`)
 	code =
 		CALL(ALLWC)   //call CFile::Open
 	+	TEST(AL, AL)  //test al, al
@@ -124,13 +122,13 @@ IgnorePalErr = function()
 	if (addr < 0)
 		throw Error("CFile::Open CALL not found");
 
-	$$(_ + '2.2 - Save the location after the conditional jump')
+	$$(_, 2.2, `Save the location after the conditional jump`)
 	const modAddr = addr + code.byteCount();
 
-	$$(_ + '2.3 - Goto the location of the conditional jump')
+	$$(_, 2.3, `Goto the location of the conditional jump`)
 	addr = Exe.GetTgtAddr(modAddr - 4, PHYSICAL);
 
-	$$(_ + '2.4 - Find the location to jump to (based on build version) before the jump address')
+	$$(_, 2.4, `Find the location to jump to (based on build version) before the jump address`)
 	let jmpAddr;
 	switch (Exe.Version)
 	{
@@ -170,7 +168,7 @@ IgnorePalErr = function()
 	if (jmpAddr < 0)
 		throw Error("End code missing");
 
-	$$(_ + '3.1 - Prep new code to send the message to OutputDebugStringA function')
+	$$(_, 3.1, `Prep new code to send the message to OutputDebugStringA function`)
 	ROC.findImports();
 
 	const parts =
@@ -211,10 +209,10 @@ IgnorePalErr = function()
 		'2,1' : _loop2,
 	});
 
-	$$(_ + '3.2 - Replace at the modAddr')
+	$$(_, 3.2, `Replace at the modAddr`)
 	Exe.SetHex(modAddr, code);
 
-	$$(_ + '3.3 - Put a JMP after the code to the jmpAddr we found')
+	$$(_, 3.3, `Put a JMP after the code to the jmpAddr we found`)
 	Exe.SetJMP(modAddr + code.byteCount(), jmpAddr, PHYSICAL);
 
 	return true;
@@ -223,14 +221,12 @@ IgnorePalErr = function()
 ///
 /// \brief Modify LuaErrorMsg function to send the error message to OutputDebugStringA instead of showing it with MessageBoxA
 ///
-IgnoreLuaErr = function()
+IgnoreLuaErr = function(_)
 {
-	const _ = 'IgnoreLuaErr : ';
-
-	$$(_ + '1.1 - Ensure "MessageBoxA" has been imported')
+	$$(_, 1.1, `Ensure "MessageBoxA" has been imported`)
 	ROC.findImports();
 
-	$$(_ + '1.2 - Find the LuaErrorMsg function code')
+	$$(_, 1.2, `Find the LuaErrorMsg function code`)
 	const cmn = LEA(R32, [ROC.StkReg, ROC.HasFP ? NEG2WC : WCp]); //lea regB, [LOCAL.x] ; where the displacement is -ve for EBP but +ve for ESP.
 
 	let parts =
@@ -271,22 +267,22 @@ IgnoreLuaErr = function()
 	if (addr < 0)
 		throw Error("LuaErrorMsg function missing");
 
-	$$(_ + '2.1 - Check for the OutputDebugStringA function address')
+	$$(_, 2.1, `Check for the OutputDebugStringA function address`)
 	if (ROC.OutDbgStrA < 0)
 		throw Error("'OutputDebugStringA' function missing");
 
-	$$(_ + '2.2 - Calculate the addresses for each part')
+	$$(_, 2.2, `Calculate the addresses for each part`)
 	const offsets = MapAddrs(addr, parts);
 
-	$$(_ + '2.3 - NOP out any code in 2nd part')
+	$$(_, 2.3, `NOP out any code in 2nd part`)
 	if (!parts[1].isEmpty())
 		Exe.SetNOPs(offsets[1], offsets[2] - offsets[1]);
 
-	$$(_ + '2.4 - NOP out any code in 4th part')
+	$$(_, 2.4, `NOP out any code in 4th part`)
 	if (!parts[3].isEmpty())
 		Exe.SetNOPs(offsets[3], offsets[4] - offsets[3]);
 
-	$$(_ + '2.5 - Change the MessageBoxA CALL to OutputDebugStringA CALL followed by xor eax, eax')
+	$$(_, 2.5, `Change the MessageBoxA CALL to OutputDebugStringA CALL followed by xor eax, eax`)
 	Exe.SetHex( offsets[4] + 1,
 		CALL([ROC.OutDbgStrA])  //call dword ptr [&KERNEL32.OutputDebugStringA]
 	+	XOR(EAX, EAX)           //xor eax, eax
@@ -303,14 +299,12 @@ IgnoreLuaErr.validate = IsPost2010;
 ///
 /// \brief Modify QuestErrorMsg function to send the error message to OutputDebugStringA instead of showing it with MessageBoxA
 ///
-IgnoreQuestErr = function()
+IgnoreQuestErr = function(_)
 {
-	const _ = 'IgnoreQuestErr : ';
-
-	$$(_ + '1.1 - Ensure "MessageBoxA" has been imported')
+	$$(_, 1.1, `Ensure "MessageBoxA" has been imported`)
 	ROC.findImports();
 
-	$$(_ + '1.2 - Find the MessageBoxA CALL inside QuestErrorMsg function')
+	$$(_, 1.2, `Find the MessageBoxA CALL inside QuestErrorMsg function`)
 	const prefix =
 		PUSH(this.FmtAddr)      //push offset "Not found Quest Info = %lu"
 	+	PUSH_EAX                //push eax
@@ -334,14 +328,14 @@ IgnoreQuestErr = function()
 	if (addr < 0)
 		throw Error("QuestErrorMsg not found");
 
-	$$(_ + '2.1 - Set addr to location after prefix')
+	$$(_, 2.1, `Set addr to location after prefix`)
 	addr += prefix.byteCount();
 
-	$$(_ + '2.2 - Check the OutputDebugStringA function address')
+	$$(_, 2.2, `Check the OutputDebugStringA function address`)
 	if (ROC.OutDbgStrA < 0)
 		throw Error("'OutputDebugStringA' function missing");
 
-	$$(_ + '2.3 - Prepare the replacement code (CALLs OutputDebugStringA instead)')
+	$$(_, 2.3, `Prepare the replacement code (CALLs OutputDebugStringA instead)`)
 	let code =
 		PUSH_EAX               //push eax
 	+	CALL([ROC.OutDbgStrA]) //call dword ptr [&KERNEL32.OutputDebugStringA]
@@ -349,7 +343,7 @@ IgnoreQuestErr = function()
 	;
 	code += NOPs(suffix.byteCount() - code.byteCount());
 
-	$$(_ + '2.4 - Now replace it')
+	$$(_, 2.4, `Now replace it`)
 	Exe.SetHex(addr, code);
 
 	return true;
@@ -367,11 +361,9 @@ IgnoreQuestErr.validate = function()
 ///
 /// \brief Modify EntryQueueErrorMsg function to send the error message to OutputDebugStringA
 ///
-IgnoreEntryQueueErr = function()
+IgnoreEntryQueueErr = function(_)
 {
-	const _ = 'IgnoreEntryQueueErr : ';
-
-	$$(_ + '1.1 - Find the location where the file is accessed')
+	$$(_, 1.1, `Find the location where the file is accessed`)
 	const parts =
 	[
 		PUSH(this.BexAddr)  //push offset "Data\Table\EntryQueue.bex"
@@ -400,16 +392,16 @@ IgnoreEntryQueueErr = function()
 	if (addr < 0)
 		throw Error("Pattern not found");
 
-	$$(_ + '1.2 - Calculate the positional addresses')
+	$$(_, 1.2, `Calculate the positional addresses`)
 	const addrs = MapAddrs(addr, parts);
 
-	$$(_ + '1.3 - Add the error string')
+	$$(_, 1.3, `Add the error string`)
 	const [, strAddr] = Exe.AddText("EntryQueue Loading Failed");
 
-	$$(_ + '2.1 - Get the OutputDebugStringA function address')
+	$$(_, 2.1, `Get the OutputDebugStringA function address`)
 	ROC.findImports();
 
-	$$(_ + '2.2 - Prepare the replacement code (CALLs OutputDebugStringA instead)')
+	$$(_, 2.2, `Prepare the replacement code (CALLs OutputDebugStringA instead)`)
 	let code =
 		PUSH(strAddr)           //push offset "EntryQueue Loading Failed"
 	+	CALL([ROC.OutDbgStrA])  //call dword ptr [&KERNEL32.OutputDebugStringA]
@@ -417,7 +409,7 @@ IgnoreEntryQueueErr = function()
 	;
 	code += NOPs( addrs.last() - (addrs[1] + code.byteCount()) );
 
-	$$(_ + '2.3 - Now replace it')
+	$$(_, 2.3, `Now replace it`)
 	Exe.SetHex(addrs[1], code);
 
 	return true;

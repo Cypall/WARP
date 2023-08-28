@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN                                              *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2021-09-11                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Modify the JPEG_CORE_PROPERTIES structure assignment inside CRenderer::SaveJPG function to set jquality member to user specified value
 ///
-CustomSSQuality = function()
+CustomSSQuality = function(_)
 {
-	const _ = 'CustomSSQuality : ';
-
-	$$(_ + '1.1 - Find the JPEG_CORE_PROPERTIES member assignments (DIBChannels & DIBColor)')
+	$$(_, 1.1, `Find the JPEG_CORE_PROPERTIES member assignments (DIBChannels & DIBColor)`)
 	let tgt = [ROC.StkReg, ROC.HasFP ? NEG2WC : WCp] ; //template for dword ptr [EBP-x] or dword ptr [ESP+x] as per frame pointer presence
 
 	let code =
@@ -56,27 +54,25 @@ CustomSSQuality = function()
 
 	const halfSize = code.byteCount() / 2; //Length of 1 assignment
 
-	$$(_ + '1.2 - Get new quality value from user')
+	$$(_, 1.2, `Get new quality value from user`)
 	let newValue = Exe.GetUserInput('$ssQuality', D_Int8, "Screenshot Quality", "Enter the new quality factor", 50, {min:0, max:100});
 	if (newValue === false)
 		Cancel("Quality factor", 50);
-
-	newValue = parseInt(newValue); //temporary fix for string
 	
-	$$(_ + '2.1 - Get the jquality addr = DIBChannels displacement + 60')
+	$$(_, 2.1, `Get the jquality addr = DIBChannels displacement + 60`)
 	const jqAddr = Instr.FromAddr(addr).Disp + 60;
 
-	$$(_ + '2.2 - Prepare code to change DIBChannels member assignment to jquality member assignment.')
+	$$(_, 2.2, `Prepare code to change DIBChannels member assignment to jquality member assignment.`)
 	///       By default DIBChannels is 3 and DIBColor is 2 already, so overwriting their assignments doesnt matter
 	///
 	code = MOV( [(ROC.HasFP ? EBP : ESP), jqAddr], newValue);  //mov dword ptr [EBP + jqAddr], newValue ; where jqAddr is negative
 	                                                           //       OR
 	                                                           //mov dword ptr [ESP + jqAddr], newValue ; where jqAddr is positive
 
-	$$(_ + '2.3 - Write the code to client')
+	$$(_, 2.3, `Write the code to client`)
 	Exe.SetHex(addr, code);
 
-	$$(_ + '2.4 - NOP out all excess bytes after the code based on the size')
+	$$(_, 2.4, `NOP out all excess bytes after the code based on the size`)
 	const codeSize = code.byteCount();
 
 	if (codeSize < halfSize)

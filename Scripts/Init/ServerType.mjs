@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2021-08-20                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -63,10 +63,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -75,29 +75,29 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false')
+	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
 
-	$$(_ + '1.4 - Find the string "sakray"')
+	$$(_, 1.4, `Find the string 'sakray'`)
 	let addr = Exe.FindText("sakray");
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not found`));
 
-	$$(_ + '1.5 - Find where its used in a PUSH')
+	$$(_, 1.5, `Find where it is PUSHed`)
 	addr = Exe.FindHex( PUSH(addr) );
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not used`));
 
-	$$(_ + '1.6 - Find an assignment to g_serverType after it')
+	$$(_, 1.6, `Find an assignment to g_serverType after it`)
 	addr = Exe.FindHex( MOV([POS4WC], 1), addr + 5); //mov dword ptr [g_serverType], 1
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - g_serverType not assigned`));
 
-	$$(_ + '2.1 - Extract the address to \'Value\' & save its hex')
+	$$(_, 2.1, `Extract the address to [Value] & save it's hex`)
 	Value = Exe.GetUint32(addr + 2);
 	Hex   = Value.toHex(4);
 
-	$$(_ + '2.2 - Set validity to true')
+	$$(_, 2.2, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 

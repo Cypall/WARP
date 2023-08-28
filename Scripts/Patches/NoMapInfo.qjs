@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2021 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2021 X-EcutiOnner (xex.ecutionner@gmail.com)        *
+*   Copyright (C) 2020-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144), X-EcutiOnner                            *
 *   Created Date  : 2021-03-06                                             *
-*   Last Modified : 2021-08-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,14 +31,12 @@
 /// \brief Zero out the system\mapInfo*.lub file strings so that it never gets loaded and therefore
 ///        avoids displaying the map sign inside CMapInfoMgr function when Player enters map.
 ///
-NoMapInfo = function()
+NoMapInfo = function(_)
 {
-	const _ = 'NoMapInfo : ';
-
-	$$(_ + '1 - Zero it out')
+	$$(_, 1, `Zero it out`)
 	Exe.SetInt8(this.LubAddr, 0);
 
-	$$(_ + '2.1 - Find the CMapInfoMgr ErrorMsg function')
+	$$(_, 2.1, `Find the CMapInfoMgr ErrorMsg function`)
 	const parts =
 	[//0
 		JZ(POS1WC)       //jz _skip
@@ -59,7 +57,7 @@ NoMapInfo = function()
 	if (addr < 0)
 		throw Error("ErrorMsg function missing");
 
-	$$(_ + '2.2 - Ensure the offsets are same')
+	$$(_, 2.2, `Ensure the offsets are same`)
 	const partAddrs = MapAddrs(addr, parts);
 	if (Instr.FromAddr(partAddrs[1]).Disp !== Instr.FromAddr(partAddrs[2]).Disp)
 		throw Error("False match found");
@@ -71,7 +69,7 @@ NoMapInfo = function()
     logRawFunc("lua_pushcclosure", addr, pushcclosureOffset);
 	*/
 
-	$$(_ + '2.3 - Enforce the JZ')
+	$$(_, 2.3, `Enforce the JZ`)
 	Exe.SetJMP(addr);
 
 	return true;

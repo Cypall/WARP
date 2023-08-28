@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2021-08-27                                             *
+*   Last Modified : 2023-08-28                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -99,7 +99,7 @@ export function show()
 export function write(msg)
 {
 	if (Handle)
-		Handle.WriteLine(msg);
+		Handle.WriteLine(msg.replace('&lt;', '<').replace('&gt;', '>'));
 
 	return Log;
 }
@@ -119,7 +119,7 @@ export function cc(state = true)
 export function dive(...v)
 {
 	Depth++;
-	return v.length ? v.join(' :: ') + ' : ' : Log;
+	return v.length ? v.join(' :: ') : Log;
 }
 
 ///

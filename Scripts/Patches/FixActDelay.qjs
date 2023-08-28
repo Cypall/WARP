@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2018 Functor                                             *
-*   Copyright (C) 2018-2021 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Functor, Andrei (4144)                                 *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,11 +31,9 @@
 /// \brief Fix delay for act files with big number of frames inside CRenderObject_virt28.
 ///        Patch idea and source bytes by Functor
 ///
-FixActDelay = function()
+FixActDelay = function(_)
 {
-	const _ = 'FixActDelay : ';
-
-	$$(_ + '1 - Find the GetDelay CALL')
+	$$(_, 1, `Find the GetDelay CALL`)
 	const prefix =
 		FSTP([EBP, WCp])        //fstp dword ptr [ebp + actIndex]
 	+	MOVSS(XMM0, [EBP, WCp]) //movss xmm0, dword ptr [ebp + actIndex]
@@ -60,7 +58,7 @@ FixActDelay = function()
 	if (index != Exe.GetUint8(addr + 7) || index != Exe.GetUint8(addr2 - 1))
 		throw Error("False match with different indices");
 
-	$$(_ + '2 - NOP out the conditional Jump')
+	$$(_, 2, `NOP out the conditional Jump`)
 	Exe.SetNOPs(addr2, 2);
 
 	return true;

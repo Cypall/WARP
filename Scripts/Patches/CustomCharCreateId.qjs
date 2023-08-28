@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,18 +22,16 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2021-09-11                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Override job id in creation dialog / packet
 ///
-CustomCharCreateId = function()
+CustomCharCreateId = function(_)
 {
-	const _ = 'CustomCharCreateId : ';
-
-	$$(_ + '1 - Find location where packet 0xA39 is being sent')
+	$$(_, 1, `Find location where packet 0xA39 is being sent`)
 	const prefix =
 		MOV(EAX, 0xA39)         //mov eax, 0A39h
 	+	MOV([EBP, NEG3WC], AX)  //mov word ptr [ebp + a39.packet_id], ax
@@ -54,14 +52,12 @@ CustomCharCreateId = function()
 	if (addrs.isEmpty())
 		throw Error("Expected exactly 1 match for Char create");
 
-	$$(_ + '2.1 - Retrieve the new value from user')
-	let newId = Exe.GetUserInput('$newJobVal', D_Uint16, "Job Id Input", "Enter the new job id", 1, {saveDefault: true});
+	$$(_, 2.1, `Retrieve the new value from user`)
+	const newId = Exe.GetUserInput('$newJobVal', D_Uint16, "Job Id Input", "Enter the new job id", 1, {saveDefault: true});
 	if (newId === false)
 		Cancel("User didn't provide any inputs");
-
-	newId = parseInt(newId); //temporary fix for strings
 	
-	$$(_ + '2.2 - Change the assignment of job id')
+	$$(_, 2.2, `Change the assignment of job id`)
 	Exe.SetHex(addrs[0] + prefix.byteCount(), MOV(EAX, newId) + NOP + NOP);
 
 	return true;

@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2021 Neo-Mind                                       *
-*   Copyright (C) 2021 Andrei Karas (4144)                                 *
+*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2020-2023 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind, Andre (4144)                        *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2021-10-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -32,14 +32,12 @@
 /// \brief Change the string used for setting window title to user specified string.
 ///        New string will be stored in the area currently holding an unused URL
 ///
-CustomWinTitle = function()
+CustomWinTitle = function(_)
 {
-	const _ = 'CustomWinTitle : ';
-
-	$$(_ + '1.1 - Find the physical location of the unused URL string')
+	$$(_, 1.1, `Find the physical location of the unused URL string`)
 	let titlePhy = Exe.FindText("http://ro.hangame.com/login/loginstep.asp?prevURL=/NHNCommon/NHN/Memberjoin.asp", PHYSICAL);
 
-	$$(_ + '1.2 - Find \'Ragnarok\' or \'Ragnarok : Zero\'')
+	$$(_, 1.2, `Find the string 'Ragnarok' or 'Ragnarok : Zero'`)
 	let oldTitle = "Ragnarok" + (ROC.IsZero ? " : Zero" : "");
 	let addr = Exe.FindText(oldTitle);
 	if (addr < 0 && ROC.IsZero)
@@ -50,14 +48,14 @@ CustomWinTitle = function()
 	if (addr < 0)
 		throw Error(`'${oldTitle}' not found`);
 
-	$$(_ + '1.3 - Find where it is assigned as the title')
+	$$(_, 1.3, `Find where it is assigned as the title`)
 	const code = MOV( [POS3WC], addr); //MOV DWORD PTR DS:[g_title], OFFSET addr; ASCII "Ragnarok" or "Ragnarok : Zero"
 
 	addr = Exe.FindHex(code);
 	if (addr < 0)
 		throw Error("Title assignment not found");
 
-	$$(_ + '2.1 - Get the new title from user')
+	$$(_, 2.1, `Get the new title from user`)
 	const varName = '$customWindowTitle';
 	const title = Exe.GetUserInput(varName, D_Text, "Client Window Title", "Enter the new title", oldTitle, {minLen:1 , maxLen: 60});//60 because URL is only that long
 	if (title === false)
@@ -66,19 +64,19 @@ CustomWinTitle = function()
 	let titleVir;
 	if (titlePhy > 0)
 	{
-		$$(_ + '2.2 - Overwrite URL with the received string')
+		$$(_, 2.2, `Overwrite URL with the received string`)
 		Exe.SetFromVar(titlePhy, varName);
 
-		$$(_ + '2.3 - Get it\'s VIRTUAL address')
+		$$(_, 2.3, `Get it's VIRTUAL address`)
 		titleVir = Exe.Phy2Vir(titlePhy);
 	}
 	else
 	{
-		$$(_ + '2.4 - In case the URL was not found, Add the string instead')
+		$$(_, 2.4, `In case the URL was not found, Add the string instead`)
 		titleVir = Exe.AddFromVar(varName)[1];
 	}
 
-	$$(_ + '2.5 - Update the string reference')
+	$$(_, 2.5, `Update the string reference`)
 	Exe.SetInt32(addr + 6, titleVir);
 
 	return true;
@@ -87,22 +85,20 @@ CustomWinTitle = function()
 ///
 /// \brief Change the Style parameter used for CreateWindowExA CALL to include WS_SYSMENU
 ///
-EnableSysMenu = function(patchName)
+EnableSysMenu = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1 - Ensure WINMKR is loaded')
+	$$(_, 1, `Ensure WINMKR is loaded`)
 	WINMKR.load();
 
-	$$(_ + '2 - Construct the code to insert')
+	$$(_, 2, `Construct the code to insert`)
 	const code =
 		MOV(EAX, [ESP, 0x10])  //mov eax, dword ptr [ARG.4] ; Style
 	+	OR(EAX, 0x80000)       //or eax, <WS_SYSMENU>
 	+	MOV([ESP, 0x10], EAX)  //mov dword ptr [ARG.4], eax
 	;
 
-	$$(_ + '3 - Stage it')
-	WINMKR.stage(patchName, code);
+	$$(_, 3, `Stage it`)
+	WINMKR.stage(_, code);
 
 	return true;
 };
@@ -121,22 +117,20 @@ EnableSysMenu.validate = IsPost2010;
 ///
 /// \brief Change the Style parameter used for CreateWindowExA CALL to include WS_EX_TOOLWINDOW
 ///
-UseMiniTitle = function(patchName)
+UseMiniTitle = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1 - Ensure WINMKR is loaded')
+	$$(_, 1, `Ensure WINMKR is loaded`)
 	WINMKR.load();
 
-	$$(_ + '2 - Construct the code to insert')
+	$$(_, 2, `Construct the code to insert`)
 	const code =
 		MOV(EAX, [ESP, 4])  //mov eax, dword ptr [ARG.1] ; ExtStyle
 	+	OR(EAX, 0x80)       //or eax, <WS_EX_TOOLWINDOW>
 	+	MOV([ESP, 4], EAX)  //mov dword ptr [ARG.1], eax
 	;
 
-	$$(_ + '3 - Stage it')
-	WINMKR.stage(patchName, code);
+	$$(_, 3, `Stage it`)
+	WINMKR.stage(_, code);
 
 	return true;
 };
@@ -146,19 +140,17 @@ UseMiniTitle = function(patchName)
 /// \brief Changes the parameters for CreateWindowExA call to achieve borderless fullscreen window (skips adding border & frame
 ///        as well as positioning at 0,0 when resolution requested == screen resolution)
 ///
-BorderlessFSW = function(patchName)
+BorderlessFSW = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1.1 - Ensure WINMKR is loaded')
+	$$(_, 1.1, `Ensure WINMKR is loaded`)
 	WINMKR.load();
 
-	$$(_ + '1.2 - Find the GetSystemMetrics function')
+	$$(_, 1.2, `Find the GetSystemMetrics function`)
 	const GetSysMetrics = Exe.FindFunc("GetSystemMetrics", "USER32.dll");
 	if (GetSysMetrics < 0)
 		throw Error("GetSystemMetrics missing");
 
-	$$(_ + '2.1 - Construct the code to insert')
+	$$(_, 2.1, `Construct the code to insert`)
 	let code =
 		PUSH_0                        //push <SM_CXSCREEN>
 	+	CALL([GetSysMetrics])         //call dword ptr [<&USER32.GetSysMetrics>]
@@ -182,11 +174,11 @@ BorderlessFSW = function(patchName)
 	const csize = code.byteCount();
 	const tmpLoc = csize - 4; //relative offset
 
-	$$(_ + '2.2 - Fill in the blanks')
+	$$(_, 2.2, `Fill in the blanks`)
 	code = SetFillTargets(code, 2, {'1,1' : csize});
 
-	$$(_ + '3 - Stage it')
-	WINMKR.stage(patchName, code, {2 : tmpLoc});
+	$$(_, 3, `Stage it`)
+	WINMKR.stage(_, code, {2 : tmpLoc});
 
 	return true;
 };

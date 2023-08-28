@@ -22,21 +22,19 @@
 *                                                                          *
 *   Author(s)     : Shinryo                                                *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2021-07-25                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
 ///
 /// \brief Change one of the Login Background format strings (str1) to the other (str2) //
 ///
-SelectLoginBG = function(patchName)
+SelectLoginBG = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1 - Prepare Strings to Find and Replace')
+	$$(_, 1, `Prepare Strings to Find and Replace`)
 	const prefix = "\xC0\xAF\xC0\xFA\xC0\xCE\xC5\xCD\xC6\xE4\xC0\xCC\xBD\xBA\\T";
 	let src, tgt;
-	if (patchName === "OnlyFirstBG")
+	if (_ === "OnlyFirstBG")
 	{
 		src = "2_\xB9\xE8\xB0\xE6" + "%d-%d.bmp";
 		tgt = "_\xB9\xE8\xB0\xE6" + "%d-%d.bmp\x00";
@@ -47,12 +45,12 @@ SelectLoginBG = function(patchName)
 		tgt = "2_\xB9\xE8\xB0\xE6" + "%d-%d.bmp";
 	}
 
-	$$(_ + '2 - Find the src string')
+	$$(_, 2, `Find the src string`)
 	const addr = Exe.FindText(prefix + src, CASE_INSENSITIVE, PHYSICAL, false);
 	if (addr < 0)
 		throw Error("Source string not found");
 
-	$$(_ + '3 - Modify the string after the dir prefix (16 bytes later) with the tgt string')
+	$$(_, 3, `Modify the string after the dir prefix (16 bytes later) with the tgt string`)
 	Exe.SetText(addr + prefix.length, tgt);
 
 	return true;

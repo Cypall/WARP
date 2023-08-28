@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-22                                             *
-*   Last Modified : 2021-08-26                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -79,10 +79,10 @@ export function load()
 {
 	const _ = Log.dive(self, 'load');
 
-	$$(_ + '1.1 - Check if load was already called')
+	$$(_, 1.1, `Check if load was already called`)
 	if (Valid != null)
 	{
-		$$(_ + '1.2 - Check for errors and report them again if present otherwise simply return')
+		$$(_, 1.2, `Check for errors and report them again if present otherwise simply return`)
 		Log.rise();
 
 		if (Valid)
@@ -91,12 +91,12 @@ export function load()
 			throw ErrMsg;
 	}
 
-	$$(_ + '1.3 - Initialize \'Valid\' to false && the \'KS_Type\' to Unknown')
+	$$(_, 1.3, `Initialize [Valid] to false && the [KS_Type] to Unknown`)
 	Valid = false;
 
 	if (Exe.BuildDate < 20160000)
 	{
-		$$(_ + '2.1 - Set the mode & the default widths & heights')
+		$$(_, 2.1, `Set the mode & the default widths & heights`)
 
 		Mode = 1; //older style
 		Sizes = [
@@ -105,7 +105,7 @@ export function load()
 			[0x8C, 0x11]
 		];
 
-		$$(_ + '2.2 - Find the size calculation & PUSHes')
+		$$(_, 2.2, `Find the size calculation & PUSHes`)
 		const parts =
 		[//0
 			LEA(R32, [2, R32, R32])                         //lea regA, [regB*2 + regB]
@@ -122,22 +122,22 @@ export function load()
 		if (addr < 0)
 			throw Log.rise(ErrMsg = new Error(`${self} - Size assignment missing`));
 
-		$$(_ + '2.3 - Save the MOV ECX instruction if applicable')
+		$$(_, 2.3, `Save the MOV ECX instruction if applicable`)
 		const preSize = parts.byteCount(0);
 		MovECX = Exe.Version >= 11 ? Instr.FromAddr(addr + preSize) : '';
 
-		$$(_ + '2.4 - Save the addresses and the code size')
+		$$(_, 2.4, `Save the addresses and the code size`)
 		HookAddr = addr;
 		OvrdSize = preSize + parts.byteCount(1);
 		RetnAddr = Exe.Phy2Vir(HookAddr + OvrdSize, CODE);
 
-		$$(_ + '2.5 - Extract the register being used in the multiplication which contains the mob type flag')
+		$$(_, 2.5, `Extract the register being used in the multiplication which contains the mob type flag`)
 		const ins = Instr.FromAddr(addr);
 		MobType = ins.SIB.getReg('B');
 	}
 	else
 	{
-		$$(_ + '3.1 - Set the mode & the default widths & heights')
+		$$(_, 3.1, `Set the mode & the default widths & heights`)
 		Mode = 2; //newer style
 		Sizes = [
 			[0x3C, 0x5],
@@ -145,10 +145,10 @@ export function load()
 			[0x3C, 0x5]
 		];
 
-		$$(_ + '3.2 - Save the ECX assignment')
+		$$(_, 3.2, `Save the ECX assignment`)
 		MovECX = MOV(ECX, EAX);
 
-		$$(_ + '3.3 - Find the size PUSHes (the pattern matches multiple times)')
+		$$(_, 3.3, `Find the size PUSHes (the pattern matches multiple times)`)
 		let parts =
 		[//0
 			PUSH(5)                  //push 5
@@ -172,7 +172,7 @@ export function load()
 		if (addrs.isEmpty())
 			throw Log.rise(ErrMsg = new Error(`${self} - PUSH pattern missing`));
 
-		$$(_ + '3.4 - Filter out the correct PUSH based on the code before it')
+		$$(_, 3.4, `Filter out the correct PUSH based on the code before it`)
 		const hookAddr = addrs.find(memAddr =>
 		{
 			let code2 =
@@ -198,16 +198,16 @@ export function load()
 		if (!hookAddr)
 			throw Log.rise(ErrMsg = new Error(`${self} - No proper size PUSHes found`));
 
-		$$(_ + '3.5 - Save the addresses and the code size')
+		$$(_, 3.5, `Save the addresses and the code size`)
 		HookAddr = hookAddr;
 		OvrdSize = 6; //2 for the 1 byte PUSH + 4 for the 4 byte PUSH
 		RetnAddr = Exe.Phy2Vir(hookAddr + 6);
 
-		$$(_ + '3.6 - Extract the memory location & update the displacement to mob type flag')
+		$$(_, 3.6, `Extract the memory location & update the displacement to mob type flag`)
 		const ins = Instr.FromAddr(hookAddr + parts.byteCount(0, 1));
 		MobType = [ins.MRM.getReg('M'), ins.Disp + 4];
 	}
 
-	$$(_ + '4.1 - Set Valid to true')
+	$$(_, 4.1, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }

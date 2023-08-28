@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2021 Andrei Karas (4144)                            *
-*   Copyright (C) 2021 Neo-Mind                                            *
+*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2021-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Andrei, Neo-Mind                                       *
 *   Created Date  : 2021-06-16                                             *
-*   Last Modified : 2021-10-23                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,15 +31,13 @@
 /// \brief Modify the CGameMode::OnUpdate function to call CGameMode::ProcessAutoFollow
 ///        after calling CGameMode::ProcessInput like the regular client (and older clients did)
 ///
-RestoreAutoFollow = function()
+RestoreAutoFollow = function(_)
 {
-	const _ = 'RestoreAutoFollow : ';
-
-	$$(_ + '1.1 - Ensure that \'Disable auto follow\' patch is not selected (unless in test mode)')
+	$$(_, 1.1, `Ensure that 'Disable auto follow' patch is not selected (unless in test mode)`)
 	if (!Warp.TestMode)
 		Warp.SetPatchState('NoAutoFollow', false);
 
-	$$(_ + '1.2 - Find the CGameMode::ProcessAutoFollow function')
+	$$(_, 1.2, `Find the CGameMode::ProcessAutoFollow function`)
 	let code =
 		FP_START            //push ebp
 		                    //mov ebp, esp
@@ -55,10 +53,10 @@ RestoreAutoFollow = function()
 	if (addr < 0)
 		throw Error("ProcessAutoFollow not found");
 
-	$$(_ + '1.3 - Save it\'s VIRTUAL address')
+	$$(_, 1.3, `Save it's VIRTUAL address`)
 	const ProcessAutoFollow = Exe.Phy2Vir(addr, CODE);
 
-	$$(_ + '1.4 - Next find the common pattern inside CGameMode::OnUpdate function')
+	$$(_, 1.4, `Next find the common pattern inside CGameMode::OnUpdate function`)
 	code =
 		MOV(ECX, EAX)        //mov ecx, eax
 	+	CALL(NEG3WC)         //call func#1
@@ -71,7 +69,7 @@ RestoreAutoFollow = function()
 	if (addrs.isEmpty())
 		throw Error("Expected exactly 1 match");
 
-	$$(_ + '1.5 - Find the call to CGameMode::ProcessInput after the pattern (still inside the function)')
+	$$(_, 1.5, `Find the call to CGameMode::ProcessInput after the pattern (still inside the function)`)
 	const parts =
 	[
 		PUSH(0x3E8)         //push 3E8h
@@ -86,14 +84,14 @@ RestoreAutoFollow = function()
 	if (addr < 0)
 		throw Error("ProcessInput not called");
 
-	$$(_ + '1.6 - Save the MOV ECX instruction')
+	$$(_, 1.6, `Save the MOV ECX instruction`)
 	const movIns = Instr.FromAddr(addr + parts.byteCount(0));
 
-	$$(_ + '1.7 - Save the hook position & the ProcessInput function address')
+	$$(_, 1.7, `Save the hook position & the ProcessInput function address`)
 	const hookAddr = movIns.NextAddr;
 	const ProcessInput = Exe.GetTgtAddr(hookAddr + 1);
 
-	$$(_ + '2.1 - Construct our new code')
+	$$(_, 2.1, `Construct our new code`)
 	code =
 		CALL(Filler(1))  //call CGameMode::ProcessInput
 	+	movIns           //mov ecx, regA; esi or ebx
@@ -101,7 +99,7 @@ RestoreAutoFollow = function()
 	+	JMP(Filler(3))   //jmp CGameMode::ProcessAutoFollow
 	;
 
-	$$(_ + '2.2 - Prepare the arguments for auto-hook')
+	$$(_, 2.2, `Prepare the arguments for auto-hook`)
 	const args =
 	{
 		values : {
@@ -113,7 +111,7 @@ RestoreAutoFollow = function()
 		}
 	};
 
-	$$(_ + '2.3 - Add our code and jump to it from hookAddr')
+	$$(_, 2.3, `Add our code and jump to it from hookAddr`)
 	AutoHook(hookAddr, code, args);
 
 	return true;

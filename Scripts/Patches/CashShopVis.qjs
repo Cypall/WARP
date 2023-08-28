@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2014-2021 Neo-Mind                                       *
+*   Copyright (C) 2014-2023 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2021-10-22                                             *
+*   Last Modified : 2023-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -31,18 +31,16 @@
 ///        HideCashShop - NOP out the code for Cash Shop Icon creation (ID = 0xBE) if present before it.
 ///        ShowCashShop - Inject code for Cash Shop Icon creation (ID = 0xBE) before it if not present.
 ///
-CashShopVis = function(patchName)
+CashShopVis = function(_)
 {
-	const _ = patchName + ' : ';
-
-	$$(_ + '1.1 - Ensure that \'Move Cash Shop Icon\' patch is not selected (unless in test mode)')
-	if (!Warp.TestMode && patchName === 'HideCashShop')
+	$$(_, 1.1, `Ensure that 'Move Cash Shop Icon' patch is not selected (unless in test mode)`)
+	if (!Warp.TestMode && _ === 'HideCashShop')
 		Warp.SetPatchState('MoveShopIcon', false);
 
-	$$(_ + '1.2 - Ensure the WINMGR object has been loaded')
+	$$(_, 1.2, `Ensure the WINMGR object has been loaded`)
 	WINMGR.load();
 
-	$$(_ + '1.3 - Find the reference location (where another icon is created)')
+	$$(_, 1.3, `Find the reference location (where another icon is created)`)
 	let code =
 		JNE(0xF)       //jne short _skip ; to location after the call for creating another icon
 	+	PUSH(0x9F)     //push 9Fh
@@ -54,7 +52,7 @@ CashShopVis = function(patchName)
 	if (jmpAddr < 0)
 		throw Error("Reference PUSH missing");
 
-	$$(_ + '1.3 - Now check if the code for cash shop creation is already present')
+	$$(_, 1.4, `Now check if the code for cash shop creation is already present`)
 	const code2 =
 		PUSH(0xBE)     //push 0BEh
 	+	WINMGR.MovECX  //mov ecx, <g_windowMgr>
@@ -62,22 +60,22 @@ CashShopVis = function(patchName)
 	;
 	const addr = Exe.FindHex( code2, jmpAddr - 0x30, jmpAddr );
 
-	if (patchName === "HideCashShop")
+	if (_ === "HideCashShop")
 	{
-		$$(_ + '2.1 - For hiding, ensure it is actually present')
+		$$(_, 2.1, `For hiding, ensure it is actually present`)
 		if (addr < 0)
 			Cancel("Icon is already hidden");
 
-		$$(_ + '2.2 - NOP out the creation code')
+		$$(_, 2.2, `NOP out the creation code`)
 		Exe.SetNOPs(addr, code2.byteCount() + 4);
 	}
 	else
 	{
-		$$(_ + '3.1 - For showing, ensure it is not already created')
+		$$(_, 3.1, `For showing, ensure it is not already created`)
 		if (addr > 0)
 			Cancel("Icon is already shown");
 
-		$$(_ + '3.2 - Prepare our code to create the icon.')
+		$$(_, 3.2, `Prepare our code to create the icon`)
 		code +=
 			Filler(1)        //Remaining parts are already used for search above
 
@@ -87,7 +85,7 @@ CashShopVis = function(patchName)
 		+	JMP(Filler(2))   //jmp <retnAddr>
 		;
 
-		$$(_ + '3.3 - Prepare the arguments for auto-hook')
+		$$(_, 3.3, `Prepare the arguments for auto-hook`)
 		const args =
 		{
 			targets : {
@@ -96,7 +94,7 @@ CashShopVis = function(patchName)
 			},
 		};
 
-		$$(_ + '3.4 - Add our code and jump to it from jmpAddr')
+		$$(_, 3.4, `Add our code and jump to it from jmpAddr`)
 		AutoHook(jmpAddr, code, args);
 	}
 
