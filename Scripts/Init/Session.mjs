@@ -1,6 +1,6 @@
  /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2022-09-22                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-07                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -44,10 +44,18 @@ export var EBvals;
 ///
 const self = 'SSN';
 
-var Valid;    //Will be true or false indicating extraction status
-var ErrMsg;   //Will contain the Error Object with a message about the issue encountered during extraction if any
-var Value;    //The g_session VIRTUAL Address
-var Hex;      //It's hex in Little Endian form
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The g_session VIRTUAL Address**/
+var Value;
+
+/**It's hex in Little Endian form**/
+var Hex;
+
 
 ///
 /// \brief Initialization Function
@@ -60,12 +68,13 @@ export function init()
 	ErrMsg = null;
 	EBvals = null;
 	Funcs = null;
-	
+
 	Identify(self, ['init', 'load', 'toString', 'valueOf']);
 }
 
 ///
-/// \brief Function to extract data from loaded exe and set the members
+/// \brief Function to extract data from loaded exe and set the members.
+///        TODO - Still cant find the coords for recent Zero clients
 ///
 export function load()
 {
@@ -85,7 +94,7 @@ export function load()
 
 	$$(_, 1.3, `Initialize [Valid] to false`)
 	Valid = false;
-	
+
 	$$(_, 2.1, `Find the reference PUSH (Base Exp Bar coords)`)
 	let code =
 		PUSH(0x4E)   //push 4Eh
@@ -94,7 +103,7 @@ export function load()
 	const refAddr = Exe.FindHex(code);
 	if (refAddr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - Base coords not PUSHed`));
-	
+
 	$$(_, 2.3, `Find the GetJobID call before the PUSH`)
 	code =
 		MOV(ECX, POS4WC)  //mov ecx, <g_session>
@@ -108,25 +117,25 @@ export function load()
 		throw Log.rise(ErrMsg = new Error(`${self} - JobID CALL not found`));
 
 	const afterBB = basebegin + code.byteCount();
-	
+
 	$$(_, 2.4, `Save the values`)
 	const GetJobID = Exe.GetTgtAddr(basebegin + 6);
 	const IsThirdJob = Exe.GetTgtAddr(afterBB - 4);
-	
+
 	Value = Exe.GetInt32(basebegin + 1);
 	Hex = Value.toHex(4);
-	
+
 	Funcs = {
 		GetJobID,
 		IsThirdJob
 	};
-	
+
 	EBvals = {
 		refAddr,
 		basebegin,
 		afterBB
 	};
-	
+
 	$$(_, 2.5, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
@@ -145,4 +154,38 @@ export function toString()
 export function valueOf()
 {
 	return Value;
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		ShowAddr("\tValue", Value, VIRTUAL);
+		Info("\tFuncs => {");
+		for (const key in Funcs)
+		{
+			ShowAddr(`\t\t${key}`, Funcs[key], VIRTUAL);
+		}
+		Info("\t}");
+		Info("\tEBvals = {");
+		for (const key in EBvals)
+		{
+			ShowAddr(`\t\t${key}`, EBvals[key]);
+		}
+		Info("\t}");
+		Info("}");
+		return true;
+	}
 }

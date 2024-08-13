@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2018 Functor                                             *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Functor, Andrei (4144)                                 *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-09                                             *
 *                                                                          *
 \**************************************************************************/
 

@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -148,8 +148,10 @@ CustomAuraLimits = function(_)
 	$$(_, 1.1, `Find the double PUSH before ReLaunchBlurEffects is CALLed`)
 	let code =
 		PUSH(0x14E)  //push 14Eh
-	+	(Exe.BuildDate > 20191022
-	?
+	+	(ROC.FullVer == 14.29 ?
+		PUSH(ECX)
+	:
+		Exe.BuildDate > 20191022 ?
 		PUSH_0       //push 0 ;extra for newer clients
 	:
 		''

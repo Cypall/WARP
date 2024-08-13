@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2020 Functor                                             *
-*   Copyright (C) 2020-2023 Neo Mind                                       *
-*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2024 Neo Mind                                       *
+*   Copyright (C) 2018-2024 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Functor, Neo-Mind, CH.C (jchcc)                        *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 

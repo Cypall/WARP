@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2019 Functor                                             *
-*   Copyright (C) 2019-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2019-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Functor, Andrei (4144), Neo-Mind                       *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -80,12 +80,14 @@ AllowSkillSpam = function(_)
 	else
 	{
 		$$(_, 3.1, `Find the new comparison`)
+		const mvReg = MOV(R32, [EBP, NEG2WC]);
 		let code =
 			CMP(Exe.Version < 14 ? R32 : EAX, 0x7F4) //cmp regA, 7F4h ; regA = EAX for VC14.16
-		+	JE(WCp)                  //je _skip
-		+	MOV(R32, [EBP, NEG2WC])  //mov regB, dword ptr [LOCAL.x]
-		+	MOV(R32, 0x438)          //mov regC, 438h
-		+	MOV([EBP, NEG2WC], R16)  //mov word ptr [LOCAL.y], reg16D
+		+	JE(WCp)                                  //je short _skip
+		+	(ROC.FullVer == 14.29 ? '' : mvReg)      //<blank> OR mov regB, dword ptr [LOCAL.x]
+		+	MOV(R32, 0x438)                          //mov regC, 438h
+		+	MOV([EBP, NEG2WC], R16)                  //mov word ptr [LOCAL.y], reg16D
+		+	(ROC.FullVer == 14.29 ? mvReg : '')      //mov regB, dword ptr [LOCAL.x] or <blank>
 		;
 
 		addr = Exe.FindHex(code);

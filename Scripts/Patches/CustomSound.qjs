@@ -1,6 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2024 Neo Mind                                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -20,9 +21,9 @@
 *                                                                          *
 |**************************************************************************|
 *                                                                          *
-*   Author(s)     : CH.C (jchcc)                                           *
+*   Author(s)     : CH.C (jchcc), Neo Mind                                 *
 *   Created Date  : 2020-11-22                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -161,10 +162,17 @@ AutoMute = function(_)
 	+	MOV(ECX, POS4WC) //mov ecx, <g_Weather>           <--Need to issue CALL from here to our code
 	+	CALL(ALLWC)      //call CWeather::Process
 	+	CMP([POS4WC], 0) //cmp dword ptr [g_isAppActive], 0
-	+	JNZ(0xD)         //jnz short _next#1
+	+	(ROC.FullVer == 14.29
+	?
+		JNZ(0x14)         //jnz short _next#1
+	+	CALL(ALLWC)      //call func#2
+	+	MOV(ECX, EAX)    //mov ecx, eax
+	:
+		JNZ(0xD)         //jnz short _next#1
 	+	CMP([POS4WC], 0) //cmp dword ptr [g_3dDevice.m_bIsFullscreen], 0
 	+	JNZ()            //jnz _next#2
-	;
+	);
+
 	addr = Exe.FindHex(code, addr, addr + 0x500);
 
 	/*
@@ -175,7 +183,6 @@ AutoMute = function(_)
 	let g_isAppActiveOffset = 17;
 	let m_bIsFullscreenOffset = [26, 4];
 	*/
-
 	if (addr < 0)
 		throw Error("g_Weather not assigned");
 

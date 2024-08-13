@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -36,33 +36,65 @@
 ///
 /// \brief Exported data members
 ///
-export var ReqJN;      //The VIRTUAL address of "ReqJobName"
-export var FnInvoker;  //The VIRTUAL address of the function which invokes the "Lua function" already PUSHed as argument
-export var FLRefAddr;  //The VIRTUAL address of the reference string used in the last call of addLoaders function below.
+/**The VIRTUAL address of "ReqJobName"**/
+export var ReqJN;
+
+/**The VIRTUAL address of the function which invokes the "Lua function" already PUSHed as argument**/
+export var FnInvoker;
+
+/**The VIRTUAL address of the reference string used in the last call of addLoaders function below.**/
+export var FLRefAddr;
+
 
 ///
 /// \brief Local data members
 ///
 const self = 'LUA';
 
-const NormFn = 0; //CALL <addr> type
-const PtrFn  = 1; //CALL DWORD PTR [addr] type
-const ZInit  = 2; //NormFn with zero initialization before it
-const UnknFn = 3; //Unknown type
 
-var Valid;      //Will be true or false indicating extraction status
-var ErrMsg;     //Error Object containing a message about the issue encountered during extraction if any
+/**CALL <addr> type**/
+const NormFn = 0;
 
-var PushState;  //The code for PUSH dword ptr [GlobLuaState]
-var StkConst;   //The constant value used in SUB ESP, const which gets executed before Lua Function name is PUSHed
+/**CALL DWORD PTR [addr] type**/
+const PtrFn  = 1;
 
-var Pushers;    //Map of various PUSH codes for formats like "d>s"
-var Al_Type;    //The type of the allocator function above
-var Allocator;  //The VIRTUAL address of the function which allocates space to store the Lua function name
+/**NormFn with zero initialization before it**/
+const ZInit  = 2;
 
-var FileLoader; //The VIRTUAL address of the function which loads the Lua file already PUSHed as argument
-var FL_movECX;  //The code for MOV ECX, dword ptr [addr] ; where addr evaluates to GlobLuaState
-                //Used before CALLs to FileLoader
+/**Similar to above but the zero is assigned as dword ptr**/
+const ZInitD = 3;
+
+/**Unknown type**/
+const UnknFn = 10;
+
+
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Error Object containing a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The code for PUSH dword ptr [GlobLuaState]**/
+var PushState;
+
+/**The constant value used in SUB ESP, const which gets executed before Lua Function name is PUSHed**/
+var StkConst;
+
+/**Map of various PUSH codes for formats like "d>s"**/
+var Pushers;
+
+/**The type of the allocator function above**/
+var Al_Type;
+
+/**The VIRTUAL address of the function which allocates space to store the Lua function name**/
+var Allocator;
+
+/**The VIRTUAL address of the function which loads the Lua file already PUSHed as argument**/
+var FileLoader;
+
+/**The code for MOV ECX, dword ptr [addr] ; where addr evaluates to GlobLuaState
+ * Used before CALLs to FileLoader**/
+var FL_movECX;
 
 ///
 /// \brief Initialization Function
@@ -164,6 +196,23 @@ export function load()
 			Al_Type = ZInit;
 			break;
 
+		case 0xC7:
+			$$(_, 3.4, `For Zero Init DIRECT call (seen in VC14.29). Save the target address as [Allocator] & set the type to <ZInitD>`)
+
+			ins.moveToNext();
+
+			if (ins.Codes[0] === 0xC7 && ins.MRM.Mode == 1) //mov [reg+10],0
+				ins.moveToNext();
+			if (ins.Codes[0] === 0xC7 && ins.MRM.Mode == 1) //mov [reg+14],0xF
+				ins.moveToNext();
+
+			if (ins.Codes[0] !== 0xE8) // Finally the direct CALL
+				throw Log.rise(ErrMsg = new Error(`${self} - No direct call found after Inits`));
+
+			Allocator = Exe.GetTgtAddr(ins.NextAddr - 4);
+			Al_Type = ZInitD;
+			break;
+
 		default:
 			throw Log.rise(ErrMsg = new Error(`${self} - Unexpected instruction after PUSH 'ReqJobName'`));
 	}
@@ -205,7 +254,7 @@ export function load()
 		throw Log.rise(ErrMsg = new Error(`${self} - jobName not used`));
 
 	$$(_, 5.3, `Find the GlobLuaState movement to ECX before the PUSH`)
-	movAddr = Exe.FindHex( MOV(ECX, [ESI, POS2WC]), addr - 10, addr); //mov ecx, dword ptr [esi + dispA]
+	movAddr = Exe.FindHex( MOV(ECX, [ROC.FullVer == 14.29 ? EDI : ESI, POS2WC]), addr - 10, addr); //mov ecx, dword ptr [esi/edi + dispA]
 	if (movAddr < 0)
 		movAddr = Exe.FindHex( MOV(ECX, [POS3WC]), addr - 10, addr);  //mov ecx, dword ptr [dispA]
 
@@ -320,12 +369,13 @@ export function createCaller(name, format)
 	switch (Al_Type)
 	{
 		case ZInit :
+		case ZInitD :
 			code +=
 				PUSH(name.length)        //push <funcNameLength>
 			+	PUSH_name                //push offset <funcName>
 			+	MOV([ECX, 0x14], 0xF)    //mov dword ptr [ecx + 14h], 0f
 			+	MOV([ECX, 0x10], 0x0)    //MOV dword ptr [ecx + 10h], 0
-			+	MOV(BYTE_PTR, [ECX], 0)  //mov byte ptr [ecx], 0
+			+	MOV(ZInitD ? DWORD_PTR : BYTE_PTR, [ECX], 0)  //mov dword/byte ptr [ecx], 0
 			+	CALL(Filler(50))         //call Allocator
 			;
 			break;
@@ -546,9 +596,9 @@ export function loadLuaAfter(hookAddr, newFiles, movECX, testAL)
 	/// 0 - Sanity check
 	if (Exe.GetUint8(hookAddr) !== 0xE8)
 		return -1;
-	
+
 	const _ = Log.dive(self, 'loadLuaAfter');
-	
+
 	$$(_, 1.1, `Prepare the template to use for each file & save its size`)
 	let template =
 		(testAL
@@ -564,26 +614,26 @@ export function loadLuaAfter(hookAddr, newFiles, movECX, testAL)
 	+	PUSH(Filler(1))                        //push offset <filePrefix>
 	+	CALL(Filler(2))                        //call CLua::Load
 	;
-	
+
 	const tsize = template.byteCount();
 	if (testAL)
 		template = SetFillTargets(template, {'3,1' : tsize});
 
 	$$(_, 1.2, `Calculate total code size`)
 	const csize = tsize * newFiles.length + 12; //5 for the CALL at the beginning, 5 for JMP at the end and 2 NULL bytes for seperation between code and strings
-	
+
 	$$(_, 1.3, `Prepare the strings to be appended at the end of the code`)
 	const strings = newFiles.join('\x00').toHex() + ' 00';
 	const ssize = strings.byteCount();
-	
+
 	$$(_, 1.4, `Allocate space for both`)
 	const [tgt, tgtVir] = Exe.Allocate(csize + ssize, 0x10); //snapping to 0x10 since its going to be like a function
-	
+
 	$$(_, 2.1, `Initialize the code variable, set the initial CALL distance and address of first string`)
 	let dist = FileLoader - (tgtVir + 5);
 	let code = CALL(dist);
 	let strAddr = tgtVir + csize;
-	
+
 	for (const file of newFiles)
 	{
 		$$(_, 2.2, `Update the distance for the next CALL`)
@@ -599,16 +649,52 @@ export function loadLuaAfter(hookAddr, newFiles, movECX, testAL)
 		$$(_, 2.4, `Update the strAddr to the next string location`)
 		strAddr += file.length + 1;
 	}
-	
+
 	$$(_, 2.5, `Append the JMP at the end along with the 2 NULLs`)
 	code += JMP(Exe.Phy2Vir(hookAddr + 5, CODE), tgtVir + csize - 7) + " 00 00";
-	
+
 	$$(_, 3.1, `Add the code & strings to the executable`)
 	Exe.SetHex(tgt, code + strings, csize + ssize);
 
 	$$(_, 3.2, `JMP to our code from the hookAddr`)
 	Exe.SetJMP(hookAddr, tgtVir);
-	
+
 	$$(_, 3.3, `Return the target address`)
 	return Log.rise(tgt);
+}
+
+///
+/// \brief Tester
+///
+const Types = ["NormFn", "PtrFn", "ZInit", "ZInitD", "UnknFn"];
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		ShowAddr("\tReqJN", ReqJN, VIRTUAL);
+		ShowAddr("\tFnInvoker", FnInvoker, VIRTUAL);
+		Info("\tPushState =>", PushState);
+		Info("\tStkConst =>", StkConst);
+		Info("\tAl_Type =", Al_Type, "(", Types[Al_Type], ")");
+		ShowAddr("\tAllocator", Allocator, VIRTUAL);
+		ShowAddr("\tFileLoader", FileLoader, VIRTUAL);
+		Info("\tFL_movECX =>", FL_movECX);
+		Info("\tPushers = {");
+		for( const [k, v] of Pushers )
+		{
+			Info(`\t\t${k} =>`, v);
+		}
+		Info("\t}");
+		Info("}");
+		return true;
+	}
 }

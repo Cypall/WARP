@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) 2017 Secret, A.K.M.                                      *
-*   Copyright (C) 2020-2023 Neo-Mind                                       *
+*   Copyright (C) 2020-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Secret, A.K.M., Neo-Mind                               *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-12                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -37,11 +37,11 @@ Intravision = function(_)
 	if (!ROC.Post2010)
 	{
 		parts =
-			JNE(2)						//jne short _skip
-		+	MOV(BL, 1)					//mov bl, 1
-		+	INC(ECX)					//inc ecx ; _skip
-		+	JMP(WCn)					//jmp short _loop
-		+	CMP(BL, 1)					//cmp bl, 1
+			JNE(2)                      //jne short _skip
+		+	MOV(BL, 1)                  //mov bl, 1
+		+	INC(ECX)                    //inc ecx ; _skip
+		+	JMP(WCn)                    //jmp short _loop
+		+	CMP(BL, 1)                  //cmp bl, 1
 		;
 	}
 	else
@@ -49,20 +49,15 @@ Intravision = function(_)
 		const imm8A = (Exe.BuildDate >= 20120700 || (ROC.IsRenewal && Exe.BuildDate >= 20120300 )) ? ' [00010.00]' : ' 0C';
 		parts =
 		[
-			JZ(ALLWC)					//jz _next
+			Exe.BuildDate > 20210200 ? JZ(WCp) : JZ(ALLWC) //jz _next
 		,
-			ADD(EAX, imm8A)				//add eax, imm8A  ; 14h in 2017 clients
-		+	CMP(EAX, ECX)				//cmp eax, ecx
-		+	JNZ(WCn)					//jnz short _loop
+			ADD(EAX, imm8A)             //add eax, imm8A  ; 14h in 2017 clients
+		+	CMP(EAX, ECX)               //cmp eax, ecx
+		+	JNZ(WCn)                    //jnz short _loop
 		];
 	}
 
 	let addrs = Exe.FindHexN(parts);
-	if (addrs.isEmpty() && Exe.BuildDate > 20210000)
-	{
-		parts[0] = JZ(WCp); //jz short _next
-		addrs = Exe.FindHexN(parts);
-	}
 	if (addrs.isEmpty())
 		throw Error("Comparison missing");
 
@@ -72,7 +67,6 @@ Intravision = function(_)
 	+	MOV(ECX, ESI)					//mov ecx, esi
 	+	CALL()							//call func#1
 	;
-
 	const found = addrs.filter( addr =>
 	{
 		if (Exe.FindHex(code, addr - 0x30, addr) > 0)
@@ -85,7 +79,6 @@ Intravision = function(_)
 			return false;
 		}
 	});
-
 	if (found.isEmpty())
 		throw Error("Only false matches found");
 

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -38,10 +38,17 @@
 ///
 const self = 'LANGTYPE';
 
-var Valid;  //Will be true or false indicating extraction status
-var ErrMsg; //Will contain the Error Object with a message about the issue encountered during extraction if any
-var Value;  //The g_serviceType VIRTUAL Address
-var Hex;    //It's hex in Little Endian form
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The g_serviceType VIRTUAL Address**/
+var Value;
+
+/**It's hex in Little Endian form**/
+var Hex;
 
 ///
 /// \brief Initialization Function
@@ -79,25 +86,74 @@ export function load()
 	Valid = false;
 
 	$$(_, 1.4, `Find the string 'america'`)
-	let addr = Exe.FindText("america");
-	if (addr < 0)
+	let strAddr = Exe.FindText("america");
+	let addr;
+	if (strAddr > 0)
+	{
+		$$(_, 1.5, `Find where it is PUSHed`)
+		addr = Exe.FindHex( PUSH(strAddr) );
+		if (addr > 0)
+		{
+			$$(_, '1.5.1', `Move addr to location after PUSH`)
+			addr += 5;
+		}
+		else if (ROC.FullVer == 14.29)
+		{
+			$$(_, 1.6, `For latest VC14 clients the string is moved to a register and then to local stack. So look for that`)
+			let code =
+				MOV(R32, [strAddr])              //mov regD, dword ptr [strAddr]
+			+	MOV(BYTE_PTR, [EBP, NEG2WC], 0)  //mov byte ptr [LOCAL.x], 0
+			;
+			addr = Exe.FindHex(code);
+			if (addr > 0)
+			{
+				$$(_, '1.6.1', `Find the pattern that is close to the langtype address assignment after the MOV`)
+				code =
+					PUSH(7) //push 7
+				+	PUSH_R  //push regA
+				+	PUSH_R  //push regB
+				+	PUSH_R  //push regC
+				+	CALL()  //call func#1
+				;
+				addr = Exe.FindHex(code, addr + 0x40, addr + 0x100);
+			}
+		}
+		if (addr < 0)
+			throw Log.rise(ErrMsg = new Error(`${self} - 'america' not used`));
+	}
+	else if (ROC.FullVer == 14.29)
+	{
+		$$(_, 2.1, `Find the string 'america' compared in parts`)
+		const code =
+			CMP([R32], 0x72656D61)          //cmp dword ptr [r32], 616D6572h ; 'amer'
+		+	JNE(WCp)                        //jne short _skip
+		+	CMP(WORD_PTR, [R32, 4], 0x6369) //cmp word ptr [r32+4], 6963h    ; 'ic'
+		+	JNE(WCp)                        //jne short _skip
+		+	CMP(BYTE_PTR, [R32, 6], 0x61)   //cmp byte ptr [r32+6], 61h      ; 'a'
+		;
+
+		addr = Exe.FindHex(code);
+		if (addr < 0)
+			throw Log.rise(ErrMsg = new Error(`${self} - 'america' not found in parts`));
+
+		$$(_, 2.2, `Move addr to location after the code`)
+		addr += code.byteCount();
+	}
+	else
+	{
 		throw Log.rise(ErrMsg = new Error(`${self} - 'america' not found`));
+	}
 
-	$$(_, 1.5, `Find where it is PUSHed`)
-	addr = Exe.FindHex( PUSH(addr) );
-	if (addr < 0)
-		throw Log.rise(ErrMsg = new Error(`${self} - 'america' not used`));
-
-	$$(_, 1.6, `Find an assignment to g_serviceType after it`)
-	addr = Exe.FindHex( MOV([POS4WC], 1), addr + 5); //mov dword ptr ds:[g_serviceType], 1
+	$$(_, 3.1, `Find an assignment to g_serviceType after it`)
+	addr = Exe.FindHex( MOV([POS4WC], 1), addr); //mov dword ptr ds:[g_serviceType], 1
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - g_serviceType not assigned`));
 
-	$$(_, 2.1, `Extract the address to [Value] & save it's hex`)
+	$$(_, 3.2, `Extract the address to [Value] & save it's hex`)
 	Value = Exe.GetUint32(addr + 2);
 	Hex = Value.toHex(4);
 
-	$$(_, 2.2, `Set [Valid] to true`)
+	$$(_, 3.3, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 
@@ -115,4 +171,25 @@ export function toString()
 export function valueOf()
 {
 	return Value;
+}
+
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		ShowAddr(self, Value, VIRTUAL);
+		return true;
+	}
 }

@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2018-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2024 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind, Andrei (4144), CH.C (jchcc)                  *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -69,7 +69,7 @@ MoveShopIcon = function(_)
 	}
 
 	$$(_, 2.1, `Find the pattern where the Screen Size is picked up (Width is at 0x24, Height is at 0x28)`)
-	code = MOV( Exe.Version >= 11 ? EAX : ECX, [POS3WC]);     //mov eax/ecx, dword ptr [g_ScreenStats]
+	code = MOV( Exe.Version >= 11 ? EAX : ECX, [POS4WC]);     //mov eax/ecx, dword ptr [g_ScreenStats]
 	const addr2 = Exe.FindHex(code + ' 8B', addr - 0x18, addr); //Some MOV follows after the g_ScreenStats MOV
 	if (addr2 < 0)
 		throw Error("Screen size retrieval not found");
@@ -153,14 +153,14 @@ ZeroCinShop = function(_)
 {
 	$$(_, 1, `Find where format string is PUSHed`)
 	const prefix =
-		MOV(ECX, ESI)       //mov ecx, esi
+		MOV(ECX, R32)       //mov ecx, esi/edi
 	+	PUSH_EAX            //push eax
 	+	PUSH(' [110.0010] 01 00 00') //push 1C2h or 1D2h (in newer clients)
 	+	PUSH(0x226)         //push 226h
 	+	CALL(ALLWC)         //call UICashShopWnd::virt68 ; dunno the name
 	;
 	let suffix =
-		PUSH([ESI, POS2WC]) //push dword ptr [esi + dispA]
+		PUSH([R32, POS2WC]) //push dword ptr [esi/edx + dispA]
 	+	LEA(EAX, [EBP, WC]) //lea eax, [ebp + <string_ptr>]
 	+	PUSH(this.FmtAddr)  //push offset "%d C"
 	+	PUSH_EAX            //push eax
