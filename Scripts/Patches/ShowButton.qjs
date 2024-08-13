@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-09                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -360,7 +360,7 @@ ShowReplayBtn.fixCoords = (btnImg, msgPrefix, suffix, suffix2) =>
 		code =
 			MOV(memLoc, -0x64)    //mov dword ptr [ebp/esp + dispX], -64 ; x-coord
 		+	MOV(memLoc, -0x64)    //mov dword ptr [ebp/esp + dispY], -64 ; y-coord
-		+	(Exe.Version > 11 ? suffix : suffix2)
+		+	(Exe.Version > 11 && Exe.MinorVer < 20 ? suffix : suffix2)
 		;
 		type = 1; //VC11+
 	}

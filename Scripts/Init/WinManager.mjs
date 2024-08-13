@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -36,18 +36,31 @@
 ///
 /// \brief Exported data members
 ///
-export var MovECX;  //The code for MOV ECX, g_windowMgr (more useful most of the time)
-export var MakeWin; //The VIRTUAL address of UIWindowMgr::MakeWindow
+
+/**The code for MOV ECX, g_windowMgr (more useful most of the time)**/
+export var MovECX;
+
+/**The VIRTUAL address of UIWindowMgr::MakeWindow**/
+export var MakeWin;
+
 
 ///
 /// \brief Local data members
 ///
 const self = 'WINMGR';
 
-var Valid;  //Will be true or false indicating extraction status
-var ErrMsg; //Will contain the Error Object with a message about the issue encountered during extraction if any
-var Value;  //The VIRTUAL address of g_windowMgr
-var Hex;    //It's hex in Little Endian form
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The VIRTUAL address of g_windowMgr**/
+var Value;
+
+/**It's hex in Little Endian form**/
+var Hex;
+
 
 ///
 /// \brief Initialization Function
@@ -133,4 +146,28 @@ export function toString()
 export function valueOf()
 {
 	return Value;
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		ShowAddr("\tValue", Value, VIRTUAL);
+		ShowAddr("\tMakeWin", MakeWin, VIRTUAL);
+		Info("\tMovECX =>", MovECX);
+		Info("}");
+		return true;
+	}
 }

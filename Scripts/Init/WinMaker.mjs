@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-10-01                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -92,7 +92,15 @@ export function load()
 	ROC.findImports();
 
 	$$(_, 2.2, `Find the location where the client window gets created`)
-	const code = PUSH(" 00 00 C? 02");
+	const code = ROC.FullVer == 14.29 ?
+	(
+		PUSH([EBP, WCn])     //push dword ptr [local.x] ; Style
+	+	PUSH([POS4WC])       //push dword ptr [addr]    ; Win Name
+	+	PUSH([EBP, WCn])     //push dword ptr [local.y] ; Class Name
+	):
+		PUSH(" 00 00 C? 02") //push <Style>
+	;
+
 	let addr = Exe.FindHexN( CALL([ROC.CreateWin]) ).find( addr =>
 	{
 		const found = Exe.FindLastHex(code, addr, addr - 0x20);
@@ -108,10 +116,10 @@ export function load()
 	addr = Exe.FindHex(MOV([POS4WC], EAX), addr, addr + 16);
 	if (addr < 0)
 		throw Log.rise(Error = new Error("Result Assignment missing"));
-	
+
 	$$(_, 2.5, `Save the location`)
 	WndAddr = Exe.GetInt32(addr + 1);
-	
+
 	$$(_, 2.6, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
@@ -202,4 +210,27 @@ function setup()
 
 	$$(_, 2.3, `Update the CALL`)
 	Exe.SetCALL(HookAddr, freeVir, 1);
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		ShowAddr("\tHookAddr", HookAddr);
+		ShowAddr("\tWndAddr", WndAddr, VIRTUAL);
+		Info("}");
+		return true;
+	}
 }

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2023 Neo-Mind                                       *
+*   Copyright (C) 2020-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-12-11                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -38,7 +38,7 @@ $$ = (pre, ver, msg) =>
 		msg == undefined ? pre + ' : ' + ver
 		                 : pre + ' : ' + ver + ' - ' + msg
 	;
-	
+
 	if (txt != undefined && Log.valid())
 	{
 		Log.write(txt);
@@ -62,7 +62,7 @@ $$$ = (pre, ver, msg) =>
 		msg == undefined ? pre + ' : ' + ver
 		                 : pre + ' : ' + ver + ' - ' + msg
 	;
-	
+
 	if (txt != undefined && Log.valid())
 	{
 		Log.write(txt);
@@ -271,28 +271,28 @@ ShowArr = (...args) =>
 		return false;
 
 	const useInfo = args.take_if('boolean', false);
-	const indent = args.take_if('number', 0);
 	const name = args.take_if('string', 'Array');
 
-	const prefix = "\t".repeat(indent);
+	const result = name.match(/^\t+/);
+	const prefix = IsArr(result) ? result[0] : '';
 
 	if (useInfo)
-		console.info(prefix, name, "= [");
+		console.info(name, "= [");
 	else
-		console.log(prefix, name, "= [");
+		console.log(name, "= [");
 
 	arr.forEach( (item, index) =>
 	{
 		if (IsArr(item))
 		{
-			ShowArr(true, indent+1, index.toString(), item);
+			ShowArr(true, prefix + "\t" + index.toString(), item);
 		}
 		else
 		{
 			if (IsStr(item))
 				item = `"${item}"`;
 
-			console.info(prefix, "\t", index, "=>", item);
+			console.info(`${prefix}\t${index}`, "=>", item);
 		}
 	});
 
@@ -313,8 +313,6 @@ ShowVar = (...args) =>
 	const [varName] = Object.keys(obj);
 	if (!varName)
 		return false;
-
-	const prefix = args.take_if('string', '');
 
 	let value = obj[varName];
 	if (IsArr(value))
@@ -388,6 +386,9 @@ ShowAddrs = (...args) =>
 {
 	let prompt = args.take_if('string', 'Addrs');
 
+	const result = prompt.match(/^\t+/);
+	const prefix = IsArr(result) ? result[0] : '';
+
 	let addrs = args.shift();
 	if (!IsArr(addrs))
 	{
@@ -427,10 +428,10 @@ ShowAddrs = (...args) =>
 		if (vir >= 0)
 			vir = "0x" + vir.toString(16);
 
-		console.info("\t", i, "=>", phy, '(', vir, ')');
+		console.info(prefix + "\t", i, "=>", phy, '(', vir, ')');
 	});
 
-	console.info(']');
+	console.info(prefix + ']');
 
 	return true;
 };

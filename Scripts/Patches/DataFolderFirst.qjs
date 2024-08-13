@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) ?-2015 Shinryo                                           *
+*   Copyright (C) ?-2024 Shinryo                                           *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo                                                *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -121,14 +121,15 @@ DataFolderFirst = function(_)
 		const addrs = Exe.FindHexN( CMP(BYTE_PTR, [ReadFolderFirst], 0) ); //CMP byte ptr [g_readFolderFirst], 0
 		if (addrs.isEmpty())
 			throw Error("Comparisons not found (VC9+)");
-
+		
+		const suf = ROC.FullVer == 14.29 ? PUSH_0 : CALL();
 		addrs.forEach( (memAddr, idx) =>
 		{
 			const __ = `${_} [${idx}]`;
 
 			$$(__, 3.2, `Find the conditional jump after each comparison`)
-			const addr = Exe.FindHex( JZ(WCp) + CALL(), memAddr + 0x7, memAddr + 0x20);//jz short _skip#3
-			                                                                           //call func#2
+			const addr = Exe.FindHex( JZ(WCp) + suf, memAddr + 0x7, memAddr + 0x20);//jz short _skip#3
+			                                                                        //call func#2 / push 0 for new clients
 			if (addr < 0)
 				throw Error(`No jump found for comparison No.${idx + 1} <b>for (VC9+)</b>`);
 

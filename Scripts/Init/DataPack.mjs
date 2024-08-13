@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,12 +22,12 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
 //
-// Stores the Data GRF addr2ess & related details
+// Stores the Data GRF address & related details
 // =============================================
 //
 // MODULE_NAME => DGRF
@@ -36,19 +36,34 @@
 ///
 /// \brief Exported data members
 ///
-export var Name;    //Will hold either 'data.grf' or 'sdata.grf' later
-export var RefAddr; //The address where it is referenced
-export var MovFMgr; //The MOV ECX, g_FileMgr code
+
+/**Will hold either 'data.grf' or 'sdata.grf' later**/
+export var Name;
+
+/**The address where it is referenced**/
+export var RefAddr;
+
+/**The MOV ECX, g_FileMgr code**/
+export var MovFMgr;
+
 
 ///
 /// \brief Local data members
 ///
 const self = 'DGRF';
 
-var Valid;  //Will be true or false indicating extraction status
-var ErrMsg; //Will contain the Error Object with a message about the issue encountered during extraction if any
-var Addr;   //The VIRTUAL address of the name
-var Hex;    //It's equivalent hex
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The VIRTUAL address of the name**/
+var Addr;
+
+/**It's equivalent hex**/
+var Hex;
+
 
 ///
 /// \brief Initialization Function
@@ -89,8 +104,8 @@ export function load()
 	Valid = false;
 
 	$$(_, 1.4, `Find the string 'data.grf' or 'sdata.grf' for really old clients`)
-	Name = ROC.Post2010 ? "data.grf" : "sdata.grf"
-	Addr = Exe.FindText(this.Name);
+	Name = ROC.Post2010 ? "data.grf" : "sdata.grf";
+	Addr = Exe.FindText(Name);
 
 	if (Addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - 'data.grf' not found`));
@@ -105,7 +120,7 @@ export function load()
 		const code =
 			MOV(ECX, POS4WC)   	//mov ecx, offset <g_fileMgr>
 		+	TEST(EAX, EAX)      //test eax, eax
-		+	SETNE([POS4WC])     //setne byte ptR [addr2]
+		+	SETNE([POS4WC])     //setne byte ptr [addr2]
 		+	PUSH(Hex)           //push offset "data.grf"
 		;
 
@@ -119,18 +134,22 @@ export function load()
 	}
 	if (addr2 < 0) //for VC6-VC11 or when the above match failed
 	{
-		const code =
-			PUSH(Hex)           //push offset "data.grf"
-		+	MOV(ECX, POS4WC)    //mov ecx, <g_fileMgr>
-		;
+		const part1 = PUSH(Hex);        //push offset "data.grf"
+		const part2 = MOV(ECX, POS4WC); //mov ecx, <g_fileMgr>
+		let delta = part1.byteCount();
 
-		addr2 = Exe.FindHex(code);
+		addr2 = Exe.FindHex(part1 + part2);
+		if (addr2 < 0)
+		{
+			delta = 0;
+			addr2 = Exe.FindHex(part2 + part1);
+		}
 		if (addr2 < 0)
 			throw Log.rise(ErrMsg = new Error(`${self} - 'data.grf' not used`));
 
 		$$(_, 2.2, `Save the Reference address (where the PUSH occurs in older clients) & extract the g_FileMgr MOV after it`)
 		RefAddr = addr2;
-		MovFMgr = Exe.GetHex(addr2 + 5, 5);
+		MovFMgr = Exe.GetHex(addr2 + delta, 5);
 	}
 
 	$$(_, 2.3, `Set [Valid] to true`)
@@ -151,4 +170,29 @@ export function toString()
 export function valueOf()
 {
 	return Addr;
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		Info("\tName =>", Name);
+		ShowAddr("\tAddr", Addr);
+		ShowAddr("\tRefAddr", RefAddr);
+		Info("\tMovFMgr =>", MovFMgr);
+		Info("}")
+		return true;
+	}
 }
