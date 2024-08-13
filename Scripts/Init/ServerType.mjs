@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -38,10 +38,17 @@
 ///
 const self = 'SRVRTYPE';
 
-var Valid;  //Will be true or false indicating extraction status
-var ErrMsg; //Will contain the Error Object with a message about the issue encountered during extraction if any
-var Value;  //The g_serverType VIRTUAL Address
-var Hex;    //It's hex in Little Endian form
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
+/**The g_serverType VIRTUAL Address**/
+var Value;
+
+/**It's hex in Little Endian form**/
+var Hex;
 
 ///
 /// \brief Initialization Function
@@ -80,24 +87,48 @@ export function load()
 
 	$$(_, 1.4, `Find the string 'sakray'`)
 	let addr = Exe.FindText("sakray");
-	if (addr < 0)
+	if (addr > 0)
+	{
+		$$(_, 1.5, `Find where it is PUSHed`)
+		addr = Exe.FindHex( PUSH(addr) );
+		if (addr < 0)
+			throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not used`));
+
+		$$(_, 1.6, `Move addr to location after PUSH`)
+		addr += 5;
+	}
+	else if (ROC.FullVer == 14.29)
+	{
+		$$(_, 2.1, `Find the string 'sakray' compared in parts`)
+		const code =
+			CMP([R32], 0x726B6173)          //cmp dword ptr [regA], 73616B72h ; 'sakr'
+		+	JNE(WCp)                        //jne short _skip
+		+	CMP(WORD_PTR, [R32, 4], 0x7961) //cmp word ptr [regA + 4], 7961h  ; 'ay'
+		+	JNE(WCp)                        //jne short _skip
+		;
+
+		addr = Exe.FindHex(code);
+		if (addr < 0)
+			throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not found in parts`));
+
+		$$(_, 2.2, `Move addr to location after the code`)
+		addr += code.byteCount();
+	}
+	else
+	{
 		throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not found`));
+	}
 
-	$$(_, 1.5, `Find where it is PUSHed`)
-	addr = Exe.FindHex( PUSH(addr) );
-	if (addr < 0)
-		throw Log.rise(ErrMsg = new Error(`${self} - 'sakray' not used`));
-
-	$$(_, 1.6, `Find an assignment to g_serverType after it`)
-	addr = Exe.FindHex( MOV([POS4WC], 1), addr + 5); //mov dword ptr [g_serverType], 1
+	$$(_, 3.1, `Find an assignment to g_serverType after it`)
+	addr = Exe.FindHex( MOV([POS4WC], 1), addr); //mov dword ptr [g_serverType], 1
 	if (addr < 0)
 		throw Log.rise(ErrMsg = new Error(`${self} - g_serverType not assigned`));
 
-	$$(_, 2.1, `Extract the address to [Value] & save it's hex`)
+	$$(_, 3.2, `Extract the address to [Value] & save it's hex`)
 	Value = Exe.GetUint32(addr + 2);
 	Hex   = Value.toHex(4);
 
-	$$(_, 2.2, `Set [Valid] to true`)
+	$$(_, 3.3, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
 }
 
@@ -115,4 +146,24 @@ export function toString()
 export function valueOf()
 {
 	return Value;
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		ShowAddr(self, Value, VIRTUAL);
+		return true;
+	}
 }

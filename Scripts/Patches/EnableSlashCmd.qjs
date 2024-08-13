@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
-*   Copyright (C) 2021-2023 Ai4rei/AN                                      *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Ai4rei/AN                                      *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind, Ai4rei/AN                                    *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-09                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -60,14 +60,21 @@ EnableWho = function(_)
 	$$(_, 2.1, `Find the common pattern to identify Zc_User_Count function`)
 	code =
 		(Exe.Version < 11 ?
-		PUSH_R           //push regA
+		PUSH_R               //push regA
 	:
-		PUSH([R32, WCp]) //push dword ptr [regA + dispA]
+		ROC.FullVer == 14.29 ?
+		MOV(R32, [R32, WCp]) //mov regA, dword ptr [regA + dispA]
+	:
+		PUSH([R32, WCp])     //push dword ptr [regA + dispA]
 	)
-	+	PUSH(0xB2)       //push 0B2h
-	+	CALL(ALLWC)      //call MsgStr
-	+	ADD(ESP, 4)      //add eSp, 4
-	;
+	+	PUSH(0xB2)           //push 0B2h
+	+	CALL(ALLWC)          //call MsgStr
+	+	(ROC.FullVer == 14.29 ?
+		PUSH_R               //push regA
+	:
+		ADD(ESP, 4)          //add eSp, 4
+	);
+
 	addr = Exe.FindHex(code);
 	if (addr < 0)
 		throw Error("Zc_User_Count not found");

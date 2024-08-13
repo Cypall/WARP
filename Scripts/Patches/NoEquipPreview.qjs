@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
+*   Copyright (C) 2020-2024 X-EcutiOnner (xex.ecutionner@gmail.com)        *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : X-EcutiOnner                                           *
 *   Created Date  : 2021-01-23                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -35,7 +35,14 @@ NoEquipPreview = function(_)
 	$$(_, 1, `Find the comparison`)
 	const prefix =
 		PUSH(this.StrAddr)               // push offset "IsEffectHatItem"
-	+	MOV(BYTE_PTR, [ECX], 0)          // mov byte ptr [ecx], 0
+	+	(ROC.FullVer == 14.29
+	?
+		MOV([ECX], 0)                    //mov dword ptr [ecx], 0
+	+	MOV([ECX, 0x10], 0)              //mov dword ptr [ecx+10h], 0
+	+	MOV([ECX, 0x14], 0xF)            //mov dword ptr [ecx+14h], 0Fh
+	:
+		MOV(BYTE_PTR, [ECX], 0)          // mov byte ptr [ecx], 0
+	)
 	+	CALL(ALLWC)                      // call std::string::assign
 	+	MOV([EBP, WCn], POS2WC)          // mov dword ptr [LOCAL.x], immA
 	+	PUSH([POS4WC])                   // push dword ptr [GlobLuaState]
@@ -53,12 +60,16 @@ NoEquipPreview = function(_)
 	+	MOV([EBP, NEG3WC], EAX)          // mov dword ptr [LOCAL.z], eax
 	+	MOV([EBP, WCn], POS2WC)          // mov dword ptr [LOCAL.x], immC
 	+	TEST(EAX, EAX)                   // test eax, eax
-	+	JZ(9)                            // jz short _skip#2 ; after the JMP below
+	+	JZ('[000010.1]')                 // jz short _skip#2 ; after the JMP below
 	+	MOV(ECX, EAX)                    // mov ecx, eax
 	+	CALL(ALLWC)                      // call UIBasicButton::UIBasicButton
+	+	(ROC.FullVer == 14.29
+	?	MOV(ESI, EAX)
+	:	''
+	)
 	+	JMP(WC)                          // jmp short _next
 	;
-
+	
     const addr = Exe.FindHex(prefix + suffix);
     if (addr < 0)
 		throw Error("Pattern not found");

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-21                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -36,33 +36,72 @@
 ///
 /// \brief Exported data members
 ///
-export var RGrfPhy;   //will contain PHYSICAL address of rdata.grf
-export var IsRenewal; //true for RE clients
-export var IsZero;    //true for Zero clients
-export var IsMain;    //true for main clients (essentially neither RE nor Zero)
-export var Post2010;  //true for 2010+ dated clients
 
-export var HasFP;  //true if client uses Frame Pointers (i.e. FPO is not ON)
-export var StkReg; //will contain the primary stack access register based on whether FPO is ON or not
+/**Will contain PHYSICAL address of rdata.grf**/
+export var RGrfPhy;
 
-export var HasLWhidden; //true if the client has a hidden login
-export var HasPktKeys;  //true if the client has keys
+/**true for RE clients**/
+export var IsRenewal;
 
-export var CashShopAddr; //will contain VIRTUAL address of the cash shop string
-export var RouletteAddr; //will contain VIRTUAL address of the roulette string
-export var AdvAgencyAddr; //will contain VIRTUAL address of 'adventurerAgency';
+/**true for Zero clients**/
+export var IsZero;
 
-export var GetModHandle; //will contain VIRTUAL address of 'GetModuleHandleA' imported function
-export var GetProcAddr;  //will contain VIRTUAL address of 'GetProcAddress' imported function
-export var OutDbgStrA;   //will contain VIRTUAL address of 'OutputDebugStringA' imported function
-export var MsgBoxA;      //will contain VIRTUAL address of 'MessageBoxA' imported function
-export var SprintF;      //will contain VIRTUAL address of either 'sprintf' or 'wsprintfA' imported function
-export var CreateWin;    //will contain VIRTUAL address of 'CreateWindowExA'
+/**true for main clients (essentially neither RE nor Zero)**/
+export var IsMain;
 
-export var Kernel32;     //will contain VIRTUAL address of 'KERNEL32.dll'
-export var BaseName;     //will contain the basename of the loaded client. Can be useful in reports and such.
+/**true for 2010+ dated clients**/
+export var Post2010;
 
-export const ClrSettings = {format: 'BGR'}; //common constraint for D_Color type
+/**true if client uses Frame Pointers (i.e. FPO is not ON)**/
+export var HasFP;
+
+/**Will contain the primary stack access register based on whether FPO is ON or not**/
+export var StkReg;
+
+/**true if the client has a hidden login**/
+export var HasLWhidden;
+
+/**true if the client has keys**/
+export var HasPktKeys;
+
+/**Will contain VIRTUAL address of the cash shop string**/
+export var CashShopAddr;
+
+/**Will contain VIRTUAL address of the roulette string**/
+export var RouletteAddr;
+
+/**Will contain VIRTUAL address of 'adventurerAgency';**/
+export var AdvAgencyAddr;
+
+/**Will contain VIRTUAL address of 'GetModuleHandleA' imported function**/
+export var GetModHandle;
+
+/**Will contain VIRTUAL address of 'GetProcAddress' imported function**/
+export var GetProcAddr;
+
+/**Will contain VIRTUAL address of 'OutputDebugStringA' imported function**/
+export var OutDbgStrA;
+
+/**Will contain VIRTUAL address of 'MessageBoxA' imported function**/
+export var MsgBoxA;
+
+/**Will contain VIRTUAL address of either 'sprintf' or 'wsprintfA' imported function**/
+export var SprintF;
+
+/**Will contain VIRTUAL address of 'CreateWindowExA'**/
+export var CreateWin;
+
+/**Will contain VIRTUAL address of 'KERNEL32.dll'**/
+export var Kernel32;
+
+/**Will contain the basename of the loaded client. Can be useful in reports and such.**/
+export var BaseName;
+
+/**Will contain Version.MinorVer as string**/
+export var FullVer;
+
+/**Common constraint for D_Color type**/
+export const ClrSettings = {format: 'BGR'};
 
 ///
 /// \brief Local data members
@@ -122,7 +161,10 @@ export function load()
 	$$(_, 2.3, `Set the base name`)
 	BaseName = System.BaseName(Exe.FilePath);
 
-	$$(_, 2.4, `Reset the import addresses`)
+	$$(_, 2.4, `Set the full version`)
+	FullVer = Exe.Version + '.' + Exe.MinorVer;
+
+	$$(_, 2.5, `Reset the import addresses`)
 	GetModHandle = -1;
 	GetProcAddr  = -1;
 	OutDbgStrA   = -1;
@@ -214,4 +256,38 @@ export function getRsrcTree()
 		CACHE.put(key, new RsrcEntry(0, Exe.GetDirAddr(D_Res, PHYSICAL)));
 
 	return CACHE.get(key);
+}
+
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	findImports();
+
+	Info(self, "= {");
+	ShowAddr("\tRGrfPhy", RGrfPhy);
+	Info("\tIsRenewal =>", IsRenewal);
+	Info("\tIsZero =>", IsZero);
+	Info("\tIsMain =>", IsMain);
+	Info("\tPost2010 =>", Post2010);
+	Info("\tHasFP =>", HasFP);
+	Info("\tStkReg =>", StkReg);
+	Info("\tHasLWhidden =>", HasLWhidden);
+	Info("\tHasPktKeys =>", HasPktKeys);
+	ShowAddr("\tCashShopAddr", CashShopAddr, VIRTUAL);
+	ShowAddr("\tRouletteAddr", RouletteAddr, VIRTUAL);
+	ShowAddr("\tAdvAgencyAddr", AdvAgencyAddr, VIRTUAL);
+	ShowAddr("\tGetModHandle", GetModHandle, VIRTUAL);
+	ShowAddr("\tGetProcAddr", GetProcAddr, VIRTUAL);
+	ShowAddr("\tOutDbgStrA", OutDbgStrA, VIRTUAL);
+	ShowAddr("\tMsgBoxA", MsgBoxA, VIRTUAL);
+	ShowAddr("\tSprintF", SprintF, VIRTUAL);
+	ShowAddr("\tCreateWin", CreateWin, VIRTUAL);
+	ShowAddr("\tKernel32", Kernel32, VIRTUAL);
+	Info("\tBaseName =>", BaseName);
+	Info("\tFullVer =>", FullVer);
+	Info("}");
+	return true;
 }

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-22                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -173,27 +173,42 @@ export function load()
 			throw Log.rise(ErrMsg = new Error(`${self} - PUSH pattern missing`));
 
 		$$(_, 3.4, `Filter out the correct PUSH based on the code before it`)
+		const reg = ROC.FullVer == 14.29 ? EDI : EBX;
+		parts =
+		[//0
+			CMP(reg, -1)			//cmp ebx/edi, -1
+		,//1
+			JE(POS2WC)				//je _skip
+		,//2
+			JNE(WCp)				//jne short _skip#2
+		+	CMP([EBP, NEG2WC], reg)	//cmp dword ptr [LOCAL.x], ebx/edi
+		+	JE(WCp)					//je short _skip#3
+		,//3
+			ROC.FullVer == 14.29
+		?	''
+		:	MOV(ESI, [EBP, WCp])	//mov esi, dword ptr [ebp + disp8A] ; ARG.x
+		,//4
+			MOV(ESI, [R32, WCp])    //mov esi, dword ptr [regA + dispA]
+		,//5
+			CMP(ESI, -1)			//cmp esi, -1
+		];
+
+		const codes =
+		[	parts[0] + parts[1] + parts[3] + parts[5]
+		,	parts[0] + parts[2] + parts[3] + parts[5]
+		,	parts[0] + parts[2] + parts[4] + parts[5]
+		];
+		const deltas =
+		[	0xA0,
+			0xF0,
+			0xF0
+		];
 		const hookAddr = addrs.find(memAddr =>
 		{
-			let code2 =
-				CMP(EBX, -1)			//cmp ebx, -1
-			+	JE(POS2WC)				//je _skip
-			+	MOV(ESI, [EBP, WCp])	//mov esi, dword ptr [ebp + disp8A] ; ARG.x
-			+	CMP(ESI, -1)			//cmp esi, -1
-			;
-			let addr = Exe.FindHex(code2, memAddr - 0xA0, memAddr);
-			if (addr < 0)
-			{
-				code2 = code2.replace(
-					JE(POS2WC),				//change JE _skip
-					                        //  TO
-					JNE(WCp)				//jne short _skip#2
-				+	CMP([EBP, NEG2WC], EBX)	//cmp dword ptr [LOCAL.x], ebx
-				+	JE(WCp)					//je short _skip#3
-				);
-				addr = Exe.FindHex(code2, memAddr - 0xF0, memAddr);
-			}
-			return (addr > 0);
+			const result = codes.find( (code2, idx) =>
+				Exe.FindHex(code2, memAddr - deltas[idx], memAddr) > 0
+			);
+			return (IsStr(result));
 		});
 		if (!hookAddr)
 			throw Log.rise(ErrMsg = new Error(`${self} - No proper size PUSHes found`));
@@ -210,4 +225,32 @@ export function load()
 
 	$$(_, 4.1, `Set [Valid] to true`)
 	return Log.rise(Valid = true);
+}
+
+///
+/// \brief Tester
+///
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		Info("\tMode =>", Mode);
+		ShowArr(true,"\tSizes", Sizes);
+		ShowAddr("\tHookAddr", HookAddr);
+		Info("\tOvrdSize =>", OvrdSize);
+		ShowAddr("\tRetnAddr", RetnAddr, VIRTUAL);
+		Info("\tMobType =>", MobType) ;
+		Info("\tMovECX =>", MovECX);
+		Info("}");
+		return true;
+	}
 }

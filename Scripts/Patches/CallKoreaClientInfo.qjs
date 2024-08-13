@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2020-2023 Secret                                         *
+*   Copyright (C) 2020-2024 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Secret                                        *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-08                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -67,11 +67,18 @@ CallKoreaClientInfo = function(_)
 	,//4
 		JNE(POS2WC)                         //jne _skip -> Skip running SelectKoreaClientInfo code ; Pattern for VC14.16 clients
 	+	MOV(R32, [POS4WC])                  //mov regC, dword ptr [addr] ; start of SelectKoreaClientInfo
+	
+	,//5
+		JNE(POS2WC)                         //jne _skip -> Skip running SelectKoreaClientInfo code ; Pattern for VC14.16 clients
+	+	JMP(7)                              //jmp _noassign
+	+	MOV(BYTE_PTR, [POS4WC], 0)          //mov byte ptr [addr], 0
+
 	];
 
 	addrs.forEach( (memAddr, idx) =>
 	{
 		const __ = `${_} [${idx}]`;
+
 
 		$$(__, 2.1, `Find the Switch case jump before each PUSH`)
 		let csize, addr;
@@ -83,7 +90,8 @@ CallKoreaClientInfo = function(_)
 		else
 		{
 			csize = codes.byteCount(0);
-			addr = Exe.FindHex(codes[0], memAddr - (Exe.Version < 14 ? 0x50 : 0x200), memAddr);
+			const delta = Exe.Version < 14 ? 0x50 : Exe.MinorVer < 20 ? 0x200 : 0x280;
+			addr = Exe.FindHex(codes[0], memAddr - delta, memAddr);
 		}
 		if (addr < 0)
 			throw Error(`Switch Case not found for No.${idx + 1}`);
@@ -121,6 +129,11 @@ CallKoreaClientInfo = function(_)
 				nopCount = 2;
 				addr2 = Exe.FindHex(codes[3], addr, tblAddr);
 			}
+		}
+		if (addr2 < 0 && Exe.Version > 11)
+		{
+			nopCount = 6;
+			addr2 = Exe.FindHex(codes[5], addr, tblAddr);
 		}
 		if (addr2 < 0)
 			throw Error(`Select*Info CALLs not found for No.${idx + 1}`);

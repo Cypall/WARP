@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-20                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-01                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -36,29 +36,55 @@
 ///
 /// \brief Exported data members
 ///
-export const Pusher  = 0; //Keys pushed as argument
-export const Mover   = 1; //Direct value movement inside Function
-export const Sharer  = 2; //Direct movement with common value for 2 or all 3 keys
-export const Virtual = 3; //Virtualized function (need to use an explicit mapping instead) OR
-                          //It is only assigning zeros.
-export const Unknown = 4; //Function with unknown signature
 
-export const Tag = 'EncKeys'; //tag name to use for shared changes
 
-export var KeySetter; //The VIRTUAL address of the function which sets the keys and/or does the obfuscation
-export var KS_Type;   //One of the types mentioned above
-export var MovECX;    //The code for mov ecx, dword ptr [KeyAddr]
-export var Assigner;  //Location where the keys are assigned inside ObfuscateOrInit function
+/**Keys pushed as argument**/
+export const Pusher  = 0;
 
-export var Keys; //The set of Packet Keys that were extracted/mapped out
+/**Direct value movement inside Function**/
+export const Mover   = 1;
+
+/**Direct movement with common value for 2 or all 3 keys**/
+export const Sharer  = 2;
+
+/**Virtualized function (need to use an explicit mapping instead) OR
+ * It is only assigning zeros.**/
+export const Virtual = 3;
+
+/**Function with unknown signature**/
+export const Unknown = 4;
+
+/**tag name to use for shared changes**/
+export const Tag = 'EncKeys';
+
+
+/**The VIRTUAL address of the function which sets the keys and/or does the obfuscation**/
+export var KeySetter;
+
+/**One of the types mentioned above**/
+export var KS_Type;
+
+/**The code for mov ecx, dword ptr [KeyAddr]**/
+export var MovECX;
+
+/**Location where the keys are assigned inside ObfuscateOrInit function**/
+export var Assigner;
+
+/**The set of Packet Keys that were extracted/mapped out**/
+export var Keys;
+
 
 ///
 /// \brief Local data members
 ///
 const self = 'PACKET';
 
-var Valid;    //Will be true or false indicating extraction status
-var ErrMsg;   //Will contain the Error Object with a message about the issue encountered during extraction if any
+/**Will be true or false indicating extraction status**/
+var Valid;
+
+/**Will contain the Error Object with a message about the issue encountered during extraction if any**/
+var ErrMsg;
+
 
 ///
 /// \brief Initialization Function
@@ -298,7 +324,7 @@ export function load()
 	$$(_, 7.1, `Since neither pattern matched we need to use explicit mapping`)
 	KS_Type = Virtual;
 
-	$$(_, 7.2, `Set the [Assigner`);
+	$$(_, 7.2, `Set the Assigner`);
 	Assigner = fnAddr + (ROC.HasFP ? 3 : 0);
 
 	$$(_, 7.3, `For older clients we will try to look in the KeyMap`)
@@ -324,4 +350,31 @@ export function load()
 
 	$$(_, 7.6, `For any other clients, the keys are 0 by default.`)
 	return Log.rise(Valid = true);
+}
+
+///
+/// \brief Tester
+///
+const Types = ["Pusher", "Mover", "Sharer", "Virtual", "Unknown"];
+export function debug()
+{
+	if (Valid == null)
+		load();
+
+	if (Valid == null)
+	{
+		Info(self + ".ErrMsg = ", ErrMsg);
+		return false;
+	}
+	else
+	{
+		Info(self, "= {");
+		ShowAddr("\tKeySetter", KeySetter, VIRTUAL);
+		Info("\tKS_Type =", KS_Type, "(", Types[KS_Type], ")");
+		Info("\tMovECX =>", MovECX);
+		ShowAddr("\tAssigner", Assigner);
+		ShowArr(true, "\tKeys", Keys.map(v => v.toHex(true)));
+		Info("}");
+		return true;
+	}
 }
