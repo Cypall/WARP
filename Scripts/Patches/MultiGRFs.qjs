@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-07                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-14                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -68,7 +68,7 @@ MultiGRFs = function(_)
 			type = 2;
 			break;
 		}
-		default: //VC14.16
+		default: //VC14.16 & VC14.29
 		{
 			code =
 				CALL(ALLWC)             //call CFileMgr::AddPak
@@ -78,7 +78,6 @@ MultiGRFs = function(_)
 			break;
 		}
 	}
-
 	let callAddr = Exe.FindHex(code, addr + 5, addr + 40);
 	if (callAddr < 0)
 	{
@@ -96,12 +95,30 @@ MultiGRFs = function(_)
 			callAddr = Exe.FindHex(code, addr + 5, addr + 40);
 		}
 	}
+	if (callAddr < 0 && type === 3)
+	{
+		code =
+			CALL(ALLWC)            //call CFileMgr::AddPak
+		+	MOVUPS(XMM0, [POS4WC]) //movups xmm0, dqword ptr [addr]
+		;
+		callAddr = Exe.FindHex(code, addr + 5, addr + 40);
+	}
+	if (callAddr < 0 && ROC.FullVer == 14.29)
+	{
+		code =
+			CALL(ALLWC)             //call CFileMgr::AddPak
+		+	CALL(ALLWC)             //call func#2
+		+	TEST(AL, AL)            //test al, al
+		+	JNE(WCp)                //jne short _skip
+		;
+		callAddr = Exe.FindHex(code, addr + 5, addr + 40);
+	}
 	if (callAddr < 0)
 		throw Error("AddPak call not found");
 
 	$$(_, 2.2, `Extract AddPak function address`)
-	const AddPak = Exe.Phy2Vir(callAddr + 5, CODE) + Exe.GetInt32(callAddr + 1);
-
+	const AddPak = Exe.GetTgtAddr(callAddr + 1);
+	
 	$$(_, 2.3, `Little trick to avoid changing 10 bytes (change the push to MOV ECX, addr)`)
 	Exe.SetUint8(addr, 0xB9);
 
