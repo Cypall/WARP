@@ -1,8 +1,8 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Ai4rei/AN, Shinryo                                *
-*   Copyright (C) 2013-2023 Neo Mind                                       *
-*   Copyright (C) 2017-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2013-2024 Neo Mind                                       *
+*   Copyright (C) 2017-2024 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -24,7 +24,7 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN, Shinryo, Neo-Mind, Andrei (4144)            *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-14                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -76,29 +76,41 @@ UseSSOLogin = function(_)
 	else //newer clients
 	{
 		$$(_, 2.1, `Find the Langtype comparison`)
-		let prefix =
+		let parts =
+		[ //0
 			CMP(BYTE_PTR, [POS4WC], 0) //cmp byte ptr [g_passwordencrypt], 0
-		+	JNE(POS2WC)                //jne _skip#2
-		+	MOV(EAX, [LANGTYPE])       //mov eax, dword ptr [g_serviceType]
+		+	JNE(POS2WC)                //jne _skip
+		
+		, //1
+			MOV(Exe.Version > 10       //mov regA, dword ptr [g_serviceType]
+				? R32
+				: EAX                  //regA will be EAX for older clients
+				, [LANGTYPE]
+			)
 		+	WC + WC                    //test eax, eax OR cmp eax, ebp
-		;
-		const suffix =
+		
+		, //2
 			JZ(POS2WC)                 //jz _sendSSO -> Send SSO Packet (ID = 0x825. was 0x2B0 in Old clients)
 		+	CMP(R32, 0x12)             //cmp regA, 12h ; ideally should be EAX but some clients have different register
 		+	JZ(POS2WC)                 //jz _sendSSO
-		;
+		];
 
-		let addr = Exe.FindHex(prefix + suffix);
-		if (addr < 0)
+		let addr = Exe.FindHex(parts);
+		if (addr < 0 && ROC.FullVer == 14.29)
 		{
-			prefix = prefix.replace( MOV(EAX, [LANGTYPE]), MOV(R32, [LANGTYPE]) ); //Change MOV EAX to MOV regA, dword ptr [g_serviceType]
-			addr = Exe.FindHex(prefix + suffix);
+			parts[0] =
+				PUSH_2                 //push 2
+			+	CALL(ALLWC)            //call func#1
+			+	MOV(ECX, R32)          //mov ecx, regA
+			+	CALL(ALLWC)            //call func#2
+			;
+			addr = Exe.FindHex(parts);
 		}
 		if (addr < 0)
 			throw Error("Langtype comparison not found <b>for (VC9+)</b>");
 
 		$$(_, 2.2, `Enforce the first JZ`)
-		Exe.SetJMP(addr + prefix.byteCount());
+		Exe.SetJMP(addr + parts.byteCount(0, 1));
 	}
 
 	return true;
@@ -114,31 +126,44 @@ UseOldLogin = function(_)
 	LANGTYPE.load();
 
 	$$(_, 1.2, `Find the langtype comparison for sending login packet inside CLoginMode::ChangeState`)
-	const prefix =
+	let parts =
+	[ //0
 		CMP(BYTE_PTR, [POS4WC], 0) //cmp byte ptr [g_passwordencrypt], 0
 	+	JNE(POS2WC)                //jne _skip
-	+	MOV(Exe.Version > 10       //mov regA, dword ptr [g_serviceType]
+	
+	, //1
+		MOV(Exe.Version > 10       //mov regA, dword ptr [g_serviceType]
 			? R32
 			: EAX                  //regA will be EAX for older clients
 			, [LANGTYPE]
 		)
-	;
-	const suffix =
+	
+	, //2
 		WC + WC                    //test eax, eax OR cmp eax, ebp
 	+	JZ(POS2WC)                 //jz _sendSSO -> Send SSO Packet (ID = 0x825. was 0x2B0 in Old clients)
 	+	CMP(R32, 0x12)             //cmp regA, 12h ; ideally should be EAX but some clients have different register
 	+	JZ(POS2WC)                 //jz _sendSSO
-	;
+	];
 
-	let addr = Exe.FindHex(prefix + suffix);
+	let addr = Exe.FindHex(parts);
+	if (addr < 0 && ROC.FullVer == 14.29)
+	{
+		parts[0] =
+			PUSH_2                 //push 2
+		+	CALL(ALLWC)            //call func#1
+		+	MOV(ECX, R32)          //mov ecx, regA
+		+	CALL(ALLWC)            //call func#2
+		;
+		addr = Exe.FindHex(parts);
+	}
 	if (addr < 0)
 		throw Error("Langtype comparison missing");
 
 	$$(_, 1.3, `Set addr to location of the TEST/CMP`)
-	addr += prefix.byteCount();
+	addr += parts.byteCount(0, 1);
 
 	$$(_, 2.1, `Set the amount of bytes to skip over`)
-	let nopCount = suffix.byteCount();
+	let nopCount = parts.byteCount(2);
 
 	$$(_, 2.2, `Ensure the instruction after the code is not another comparison. If so update the nopCount`)
 	const ins = Instr.FromAddr(addr + nopCount);
