@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-12-11                                             *
-*   Last Modified : 2024-08-01                                             *
+*   Last Modified : 2024-08-15                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -314,6 +314,8 @@ ShowVar = (...args) =>
 	if (!varName)
 		return false;
 
+	const prefix = args.take_if('string', '');
+
 	let value = obj[varName];
 	if (IsArr(value))
 	{
@@ -440,16 +442,32 @@ ShowAddrs = (...args) =>
 /// \brief Reset the internal counter.
 ///
 ResetC = _ =>
-	(console.cnt = 0) || true;
+	(console.cnt = _ || 0) || true;
 
 ///
 /// \brief Increment the counter.
 ///
 IncrC = _ =>
-	(console.cnt = (console.cnt || 0) + 1) || true;
+	(console.cnt = (console.cnt || 0) + (_ || 1)) || true;
 
 ///
 /// \brief Display the current count along with version & build date.
 ///
-ShowC = _ =>
-	console.log('cnt' in console ? console.cnt : 'Counter not set', Exe.Version, Exe.BuildDate) || true;
+ShowC = (...args) =>
+{
+	let suf = [];
+	while (args.length > 0)
+	{
+		const obj = args.take_if('object', null);
+		if (obj === null)
+		{
+			suf.push(":: " + args.shift());
+		}
+		else
+		{
+			for (const k in obj)
+				suf.push(`:: ${k} = ${obj[k]}`);
+		}
+	}
+	console.log('cnt' in console ? console.cnt : 'Counter not set', Exe.Version + '.' + Exe.MinorVer, Exe.BuildDate, ...suf) || true;
+}
