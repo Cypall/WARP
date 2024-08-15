@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project                                    *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2021-06-15                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-14                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -59,8 +59,7 @@ SendClientFlags = function(_)
 			for (const addr of Exe.FindHexN(MOV(reg, [versionAddr])))
 				SCF_Addrs.add(addr);
 		}
-
-		if (SCF_Addrs.size !== 6)
+		if (SCF_Addrs.size !== 6 && (SCF_Addrs.size !== 3 || ROC.FullVer != 14.29))
 			throw Error("Unexpected no of version address references");
 
 		$$(_, 1.6, `Save the addresses`)
