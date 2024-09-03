@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo, MS                                       *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, MS, Neo-Mind                                  *
 *   Created Date  : 2020-11-08                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-22                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -101,8 +101,8 @@ HideLicense = function(_)
 	if (refAddr < 0)
 		throw Error("'btn_disagree' not PUSHed");
 
-	$$(_, 1.3, `Find the Switch Case JMPer within 0x200 bytes before the PUSH`)
-	addr = Exe.FindHex( JMP([4, Exe.Version > 6 ? EAX : R32, POS4WC]), refAddr - 0x200, refAddr); //jmp dword ptr [eax*4 + jmpTable] ; really old clients use other registers like ECX
+	$$(_, 1.3, `Find the Switch Case JMPer within 0x200 bytes (0x300 for latest) before the PUSH`)
+	addr = Exe.FindHex( JMP([4, Exe.Version > 6 ? EAX : R32, POS4WC]), refAddr - (Exe.BuildDate > 20240000 ? 0x300 : 0x200), refAddr); //jmp dword ptr [eax*4 + jmpTable] ; really old clients use other registers like ECX
 	if (addr < 0)
 		throw Error("Switch Case not found");
 

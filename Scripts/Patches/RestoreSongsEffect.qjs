@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2023 CH.C (jchcc)                                   *
+*   Copyright (C) 2020-2024 CH.C (jchcc)                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc)                                           *
 *   Created Date  : 2021-06-10                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-30                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -64,12 +64,17 @@ RestoreSongsEffect = function(_)
 	}
 	else //VC14.16
 	{
+		const hasExtra = ROC.IsZero
+		?	Exe.BuildDate > 20220000 && Exe.BuildDate < 20221200
+		:	Exe.BuildDate > 20200300 && Exe.BuildDate < 20220400
+		;
+		
 		prefix =
-			MOV(ECX, [ESI, POS2WC]) //mov ecx,[esi+3E0h]
+			MOV(ECX, [ESI, POS2WC]) //mov ecx, dword ptr [esi + 3E0h]
 		+	TEST(ECX, ECX)          //test ecx, ecx
 		+	JNE(ALLWC)              //jne _skip
 		+	SUB(ESP, 0x10)          //sub esp, 10h
-		+	(!ROC.IsZero && Exe.BuildDate > 20200300
+		+	(hasExtra
 		?
 			MOV([EBP, WCn], ECX)    //mov dword ptr [LOCAL.x], ecx
 		+	MOV(EAX, [EBP, WCn])    //mov dword ptr eax,[LOCAL.x]
@@ -80,7 +85,6 @@ RestoreSongsEffect = function(_)
 		+	MOV(ECX, ESP)           //mov ecx, esp
 		;
 	}
-
 	suffix =
 		PUSH(0xF2)            //push F2h ; <=== patch location
 	+	JMP()                 //jmp addr
@@ -95,16 +99,30 @@ RestoreSongsEffect = function(_)
 	const retnVir = Exe.GetTgtAddr(patchAddr + suffix.byteCount());//might as well goto the JMP target directly
 
 	$$(_, 2.3, `Get skill id addr`)
-	prefix =
-		MOV(EAX, POS2WC)        //mov eax, 1094h
-	+	JNE(6)                  //jne short _ skip#1
-	;
-	suffix =
-		MOV(EAX, [ESI, POS2WC]) //mov eax,[esi+skillOffset]
-	+	POP(ESI)                //pop esi
-	+	RETN()                  //retn ; _skip#1
-	;
-
+	if (ROC.FullVer == 14.29)
+	{
+		prefix = ''
+		;
+		suffix =
+			MOV(ESI, [R32, POS2WC]) //mov esi, dword ptr [regA + skillOffset]
+		+	MOV(EAX, [R32])         //mov eax, dword ptr [regA]
+		+	CALL([EAX, WCp])        //call dword ptr [eax + constA]
+		+	PUSH_EAX                //push eax
+		;
+	}
+	else
+	{
+		prefix =
+			MOV(EAX, POS2WC)        //mov eax, 1094h
+		+	JNE(6)                  //jne short _ skip#1
+		;
+		suffix =
+			MOV(EAX, [ESI, POS2WC]) //mov eax, dword ptr [esi + skillOffset]
+		+	POP(ESI)                //pop esi
+		+	RETN()                  //retn ; _skip#1
+		;
+	}
+	
 	addr = Exe.FindHex(prefix + suffix);
 	if (addr < 0)
 		throw Error("skill addr not found");

@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2019-2023 CH.C (jchcc)                                   *
-*   Copyright (C) 2021-2023 Neo-Mind                                       *
+*   Copyright (C) 2019-2024 CH.C (jchcc)                                   *
+*   Copyright (C) 2021-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : CH.C (jchcc), Neo-Mind                                 *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-22                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -138,7 +138,7 @@ InsensitiveShopSearch = function(_)
 	+	CALL()      //call MsgStr
 	;
 	const addrs = Exe.FindHexN(code);
-	
+
 	if (Exe.Version > 11)
 	{
 		$$(_, 2.1, `Find the first comparison before the reference code`)
@@ -150,13 +150,15 @@ InsensitiveShopSearch = function(_)
 		+	JE(POS2WC)     //je _skip
 		;
 		
+		const offset1 = ROC.FullVer == 14.29 ? 0x380 : 0x300;
+		const offset2 = offset1 - 0x100;
 		const hookAddr = addrs.findAs( memAddr => {
-			const addr = Exe.FindHex(code, memAddr - 0x300, memAddr - 0x200);
+			const addr = Exe.FindHex(code, memAddr - offset1, memAddr - offset2);
 			return addr > 0 ? addr : null;
 		});
 		if (!hookAddr)
 			throw Error("Initial comparison missing");
-		
+
 		const retnAddr = Exe.Phy2Vir(hookAddr + 5, CODE);
 		const nextAddr = hookAddr + code.byteCount();
 		
@@ -279,13 +281,12 @@ InsensitiveStorageSearch = function(_)
 	const fnAddr = CaseInsensitiveSearch(_);
 	
 	$$(_, 2.1, `Find string search for storage`)
+	const reg = ROC.FullVer == 14.29 ? EDX : ECX;
 	const prefix =
-		PUSH(ECX)               //push ecx
+		PUSH(reg)               //push ecx/edx
 	+	(Exe.Version > 11
-	?
-		CMOVNB(EAX, [EBP, WCn]) //cmovnb eax, dword ptr [ebp - dispA]
-	:
-		''
+	?	CMOVNB(EAX, [EBP, WC])  //cmovnb eax, dword ptr [ebp - dispA / ARG.2]
+	:	''
 	)
 	+	PUSH_EAX                //push eax
 	;
@@ -294,10 +295,16 @@ InsensitiveStorageSearch = function(_)
 		CALL([POS4WC])          //call dword ptr [_mbsstr]
 	+	ADD(ESP, 8)             //add esp, 8
 	+	TEST(EAX, EAX)          //test eax, eax
-	+	JE(4)                   //je short _skip ; after the JMP below
+	+	(ROC.FullVer == 14.29
+	?
+		JNZ(WCp)
+	+	XOR(R8, R8)
+	+	JMP(POS2WC)
+	:
+		JE(4)                   //je short _skip ; after the JMP below
 	+	MOV(ESI, [ESI])         //mov esi, dword ptr [ESI]
 	+	JMP(WCp)                //jmp short _next
-	;
+	);
 
 	let addr = Exe.FindHex(prefix + suffix);
 	if (addr < 0)

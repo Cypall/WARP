@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2014-2023 Neo-Mind                                       *
+*   Copyright (C) 2014-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -50,7 +50,6 @@ CustomVendingLimit = function(_)
 	:            // or
 		JL(WCp)  //jl short _proceed
 	);
-
 	addr = Exe.FindHex(code, addr - 0x10, addr);
 	if (addr < 0)
 		throw Error("First Comparison not found");
@@ -82,7 +81,7 @@ CustomVendingLimit = function(_)
 	if (addr2 < 0 && newStyle)
 	{
 		code = code.replace(JLE(WCp), JBE(WCp));//Recent clients use JBE instead of JLE
-		addr2 = Exe.FindHex(code, addr - 0x80, addr);
+		addr2 = Exe.FindHex(code, addr - 0xC0, addr);
 	}
 	if (addr2 < 0)
 		throw Error("Second Comparison not found");
@@ -93,8 +92,8 @@ CustomVendingLimit = function(_)
 	if (newStyle)
 	{
 		$$(_, 1.7, `For new style look for the additional comparisons (can range from 0 to 3)`)
-		const code1 = CMP(R32, limiter);
-		const code1a = CMP(EAX, limiter);
+		const code1a = CMP(R32, limiter);
+		const code1b = CMP(EAX, limiter);
 
 		const code2 =
 			PUSH_1      //push 1
@@ -102,26 +101,39 @@ CustomVendingLimit = function(_)
 		+	PUSH(0x9A3) //push 9A3h ; Line no. 2468
 		;
 
-		const code3 = MOV(R32, limiter);
+		const code3a = MOV(R32, limiter);
+		const code3b = PUSH(limiter);
 
 		for (const memAddr of Exe.FindHexN(code2))
 		{
-			let addr = Exe.FindLastHex(code1, memAddr - 9, memAddr - 0x20);
+			let addr = Exe.FindLastHex(code1a, memAddr - 9, memAddr - 0x20);
 			let offset = 2;
 			if (addr < 0)
 			{
-				addr = Exe.FindLastHex(code1a, memAddr - 9, memAddr - 0x20);
+				addr = Exe.FindLastHex(code1b, memAddr - 9, memAddr - 0x20);
 				offset = 1;
 			}
 			if (addr > 0)
 			{
 				limitAddrs.push(addr + offset);
 
-				addr = Exe.FindHex(code3, memAddr, memAddr + 0x70);
-				if (addr < 0)
-					throw Error("Unable to find the limit assignment");
-
-				limitAddrs.push(addr + 1);
+				let cnt = 0;
+				addr = Exe.FindHex(code3a, memAddr, memAddr + 0x70);
+				if (addr > 0)
+				{
+					limitAddrs.push(addr + 1);
+					cnt++;
+				}
+				
+				addr = Exe.FindHex(code3b, memAddr, memAddr + 0x70);
+				if (addr > 0)
+				{
+					limitAddrs.push(addr + 1);
+					cnt++;
+				}
+				
+				if (cnt == 0)
+					throw Error("Unable to find the limit assignments");				
 			}
 		}
 	}

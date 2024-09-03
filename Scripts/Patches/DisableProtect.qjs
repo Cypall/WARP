@@ -1,9 +1,9 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Ai4rei/AN                                         *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2023 X-EcutiOnner                                   *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2024 X-EcutiOnner                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -25,7 +25,7 @@
 *                                                                          *
 *   Author(s)     : Ai4rei/AN, Neo-Mind, Andrei (4144), X-EcutiOnner       *
 *   Created Date  : 2020-11-19                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-01-10                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -316,9 +316,9 @@ NoGGuard = function(_)
 	if (Exe.Version >= 10) //VC10+
 	{
 		code =
-			TEST(AL, AL)                             //test al, al
-		+	JE(Exe.Version > 11 ? POS2WC : WCp)      //je _skip#2
-		+	CALL(Exe.Version > 11 ? ALLWC : NEG3WC) //call func#1
+			TEST(AL, AL)                                              //test al, al
+		+	JE(Exe.Version > 11 && Exe.MinorVer < 20 ? POS2WC : WCp)  //je _skip#2
+		+	CALL(Exe.Version > 11 ? ALLWC : NEG3WC)                   //call func#1
 		+	MOV(ECX, EAX)                            //mov ecx, eax
 		+	CALL()                                   //call func#2
 		;
@@ -331,7 +331,7 @@ NoGGuard = function(_)
 		+	MOV(R32, [POS3WC]) //mov regA, dword ptr [addr#2]
 		;
 	}
-
+	
 	const found = addrs.filter( memAddr =>
 	{
 		addr = Exe.FindHex(code, memAddr - 0x100, memAddr);
@@ -349,6 +349,7 @@ NoGGuard = function(_)
 	});
 	if (found.isEmpty())
 		throw Error("JE not found before 'nProtect GameGuard' PUSH");
+
 
 	if ( Exe.BuildDate > 20220000 )
 	{
@@ -374,21 +375,24 @@ NoGGuard = function(_)
 		$$(_, 4.3, `Go inside the testing function`)
 		addr = Exe.GetTgtAddr(addr + 1, PHYSICAL);
 		
-		$$(_, 4.4, `Find the assignment call`)
-		let parts =
-		[
-			PUSH_EAX       //push eax
-		+	CALL(ALLWC)    //call assigner
-		,
-			TEST(EAX, EAX) //test eax, eax
-		+	JNE(WCp)       //jnz short _proceed#2
-		];
-		let addr2 = Exe.FindHex(parts, addr + 0x60, addr + 0x100);
-		if (addr2 < 0)
-			throw Error("Assignment function call missing");
+		if (ROC.FullVer != 14.29)
+		{
+			$$(_, 4.4, `Find the assignment call`)
+			let parts =
+			[
+				PUSH_EAX       //push eax
+			+	CALL(ALLWC)    //call assigner
+			,
+				TEST(EAX, EAX) //test eax, eax
+			+	JNE(WCp)       //jnz short _proceed#2
+			];
+			let addr2 = Exe.FindHex(parts, addr + 0x60, addr + 0x100);
+			if (addr2 < 0)
+				throw Error("Assignment function call missing");
 		
-		$$(_, 4.5, `NOP it out`)
-		Exe.SetNOPs(addr2, parts.byteCount(0)); //1 for PUSH + 5 for CALL
+			$$(_, 4.5, `NOP it out`)
+			Exe.SetNOPs(addr2, parts.byteCount(0)); //1 for PUSH + 5 for CALL
+		}
 		
 		$$(_, 4.6, `Find the byte comparison now`)
 		parts =
@@ -402,7 +406,8 @@ NoGGuard = function(_)
 			CMP(BYTE_PTR, [R32, 4], 0) //cmp byte ptr [regA+4], 0
 		];
 		
-		addr2 = Exe.FindHex(parts, addr + 0x120, addr + 0x180);
+		addr += (ROC.FullVer == 14.29 ? 0x50 : 0x120);
+		let addr2 = Exe.FindHex(parts, addr, addr + 0x60);
 		if (addr2 < 0)
 			throw Error("Assignment missing");
 		
