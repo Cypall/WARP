@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2020-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2023 X-EcutiOnner (xex.ecutionner@gmail.com)        *
+*   Copyright (C) 2020-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2024 X-EcutiOnner (xex.ecutionner@gmail.com)        *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144), X-EcutiOnner                            *
 *   Created Date  : 2021-01-23                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-09-03                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -34,27 +34,35 @@
 SkipSignBoard = function(_)
 {
     $$(_, 1.1, `Prepare the template to search with`)
-	const template =
-		PUSH(Filler(1)) //push <pathAddr>
-	+	CALL()          //call CLua::Loader
-	;
+	let template =
+	[
+		MOV(ECX, [Exe.BuildDate > 20240000 ? EDI: ESI, POS2WC])  //mov ecx, dword ptr [edi/esi + offA]
+	,
+		PUSH_0                   //push 0
+	+	PUSH_1                   //push 1
+	+	PUSH(Filler(1))          //push <pathAddr>
+	,
+		CALL()                   //call CLua::Loader
+	];
+	
+	$$(_, 1.2, `Find the first lua file call`)
+	let code = template.map( elem => SwapFillers(elem, {1: this.PathAddr}) );
+	let idx = 0;
+	if (ROC.FullVer == 14.29 && Exe.BuildDate < 20240000)
+	{
+		idx = 1;
+		[ code[0], code[1] ] = [ code[1], code[0] ] ;
+	}
 
-	$$(_, 1.2, `Find the first reference`)
-	let addr = Exe.FindHex( SwapFillers( template, {1: this.PathAddr} ) );
-	if (addr < 0)
+	let beginAddr1 = Exe.FindHex( code );
+	if (beginAddr1 < 0)
 		throw Error("SignBoardList_F not used");
-
-	$$(_, 1.3, `Find the state PUSH before it`)
-	let beginAddr1 = Exe.FindLastHex(MOV(ECX, [ESI, POS2WC]), addr, addr - 0x10);
-	if (beginAddr1 < 0)
-		beginAddr1 = Exe.FindLastHex(MOV(ECX, [POS3WC]), addr, addr - 0x10);
-
-	if (beginAddr1 < 0)
-		throw Error("State PUSH missing");
-
-	$$(_, 1.4, `Save the instruction & endAddr1`)
-	const movECX = Instr.FromAddr(beginAddr1);
-	const endAddr1 = addr + 4; //after the CALL
+	
+	const csize = code.byteCount();
+	
+	$$(_, 1.3, `Update the MOV instruction and save the end address`)
+	template[0] = Instr.FromAddr(beginAddr1 + code.byteCount(0, idx) - 6);
+	const endAddr1 = beginAddr1 + csize + 4; //after the CALL
 
 	$$(_, 2.1, `Find the string 'Lua Files\\SignBoardList'`)
     const prefAddr = Exe.FindText("Lua Files\\SignBoardList", CASE_INSENSITIVE);
@@ -62,17 +70,12 @@ SkipSignBoard = function(_)
 		throw Error("SignBoardList not found");
 
 	$$(_, 2.2, `Find it's reference after endAddr1`)
-	addr = Exe.FindHex( SwapFillers( template, {1: prefAddr} ) , endAddr1 , endAddr1 + 0x40);
-	if (addr < 0)
+	const beginAddr2 = Exe.FindHex( SwapFillers( template, {1: prefAddr} ) , endAddr1 , endAddr1 + 0x40);
+	if (beginAddr2 < 0)
 		throw Error("SignBoardList not used");
 
-	$$(_, 2.3, `Find the state PUSH before it`)
-	const beginAddr2 = Exe.FindLastHex(movECX, addr, addr - 0x10);
-	if (beginAddr2 < 0)
-		throw Error("State PUSH missing again");
-
-	$$(_, 2.4, `Save the end address`)
-	const endAddr2 = addr + 4;
+	$$(_, 2.3, `Save the end address`)
+	const endAddr2 = beginAddr2 + csize + 4; //after the CALL
 
 	if (beginAddr2 === endAddr1)
 	{

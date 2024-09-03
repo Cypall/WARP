@@ -1,10 +1,10 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
-*   Copyright (C) 2018-2023 Jian                                           *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
+*   Copyright (C) 2018-2024 Jian                                           *
 *   Copyright (C) 2017 Secret                                              *
-*   Copyright (C) 2017-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2023 X-EcutiOnner                                   *
+*   Copyright (C) 2017-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2024 X-EcutiOnner                                   *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -26,7 +26,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind, Jian, Secret, Andrei (4144), X-EcutiOnner    *
 *   Created Date  : 2020-11-09                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -43,7 +43,39 @@ CustomPath = function(_)
 	const {varName, prefix, strType, name, nameAddr} = this.Data.get(_);
 
 	$$(_, 1.3, `Find location where the string is PUSHed`)
-	const addr = Exe.FindHex( PUSH(nameAddr) );
+	let addr = Exe.FindHex( PUSH(nameAddr) );
+	let refAddrs;
+	if (addr < 0 && ROC.FullVer == 14.29 && _ === 'CustomPrivAirplaneLub')
+	{
+		let localPtr = [EBP, WCn];
+		const parts =
+		[//0
+			PUSH(0x20)                     // push 20h
+		+	MOV(localPtr, 0xF)             // mov dword ptr [LOCAL.5], 0fh
+		+	MOV(BYTE_PTR, localPtr, 0)     // mov byte ptr [LOCAL.10], 0
+		+	CALL(ALLWC)                    // call <allocator>
+		,//1
+			MOVUPS(XMM0, [nameAddr])       // movups xmm0, dqword ptr [nameAddr]
+		,//2
+			MOV(ECX, EAX)                  // mov ecx, eax
+		+	MOV(localPtr, 0x1F)            // mov dword ptr [LOCAL.x], 1Fh 
+		+	MOV(localPtr, 0x1F)            // mov dword ptr [LOCAL.y], 1Fh 
+		,//3
+			MOVUPS([ECX], XMM0)            // movups dqword ptr [ecx], xmm0
+		+	MOVQ(XMM0, [nameAddr + 0x10])  // movq xmm0, qword ptr [nameaddr + 10h]
+		+	MOVQ([ECX, 0x10], XMM0)        // movq qword ptr [ecx + 10h], xmm0
+		+	MOV(EAX, [nameAddr + 0x18])    // mov eax, dword ptr [nameaddr + 18h]
+		+	MOV([ECX, 0x18], EAX)          // mov dword ptr [ecx + 18h], eax
+		+	MOV(AX, [nameAddr + 0x1C])     // mov ax, word ptr [nameaddr + 1Ch]
+		+	MOV([ECX, 0x1C], AX)           // mov word ptr [ecx + 1Ch], ax
+		+	MOV(AL, [nameAddr + 0x1E])     // mov al, byte ptr [nameaddr + 1Eh]
+		+	MOV([ECX, 0x1E], AL)           // mov byte ptr [ecx + 1Eh], al
+		+	MOV(BYTE_PTR, [ECX, 0x1F], 0)  // mov byte ptr [ecx + 1Fh], 0
+		];//4
+		addr = Exe.FindHex(parts);
+		if (addr > 0)
+			refAddrs = MapAddrs(addr, parts);
+	}
 	if (addr < 0)
 		throw Error(`'${name} not used`);
 
@@ -61,9 +93,53 @@ CustomPath = function(_)
 	$$(_, 2.1, `Add the file name`)
 	const [, freeVir] = Exe.AddFromVar(varName);
 
-	$$(_, 2.2, `Update the PUSHed address`)
-	Exe.SetUint32(addr + 1, freeVir);
+	if (refAddrs == undefined)
+	{
+		$$(_, 2.2, `Update the PUSHed address`)
+		Exe.SetUint32(addr + 1, freeVir);
+	}
+	else if (_ == 'CustomPrivAirplaneLub')
+	{
+		$$(_, 3.1, `Construct the new code for copying`)
+		let dsize = newStr.length;
+		let offset = 0;
+		let code = '';
+		[
+			[0x10, MOVUPS, XMM0],
+			[0x08, MOVQ, EAX],
+			[0x04, MOV, EAX],
+			[0x01, MOV, AL]
+		].forEach( ([fsize, cmd, reg]) => {
+			let nextOff = offset + fsize;
+			while (nextOff <= dsize)
+			{
+				code +=
+					cmd.apply(null, [reg, [freeVir + offset]])
+				+	cmd.apply(null, [[ECX, offset], reg])
+				;
+				offset = nextOff;
+				nextOff += fsize;
+			}
+		});
 
+		code += 
+			MOV(BYTE_PTR, [ECX, offset], 0)
+		+	JMP(Filler(1))
+		;
+
+		$$(_, 3.2, `Update the alloc size`)
+		Exe.SetInt8(refAddrs[0] + 1, newStr.length + 1);
+
+		$$(_, 3.3, `NOP out the initial assignment`)
+		Exe.SetNOPs(refAddrs[1], refAddrs[2] - refAddrs[1]);
+
+		$$(_, 3.4, `Hook up our code`)
+		AutoHook(refAddrs[3], code, {
+			targets: {
+				1: Exe.Phy2Vir(refAddrs[4],CODE)
+			}
+		});
+	}
 	return true;
 };
 
@@ -251,7 +327,7 @@ CustomLicenseTxt = function(_)
 		throw Error(`'${Orig_LicTxt}' not found`);
 
 	$$(_, 1.2, `Find where it is assigned`)
-	addr = Exe.FindHex( MOV([POS3WC], addr) ); //MOV DWORD PTR DS:[g_licence], stringAddr
+	addr = Exe.FindHex( MOV([POS4WC], addr) ); //MOV DWORD PTR DS:[g_licence], stringAddr
 	if (addr < 0)
 		throw Error(`'${Orig_LicTxt}' not assigned`);
 
@@ -268,22 +344,23 @@ CustomLicenseTxt = function(_)
 	Exe.SetInt32(addr + 6, freeVir);
 
 	$$(_, 3.1, `Find EULA string`)
-	addr = Exe.FindText("No EULA text file. (licence.txt)");
-	if (addr < 0)
+	const strAddr = Exe.FindText("No EULA text file. (licence.txt)");
+	if (strAddr < 0)
 		throw Error("EULA string not found");
 
 	$$(_, 3.2, `Prepare the new EULA error string using the filename received`)
 	const eulaString = "No EULA text file. (" + newFile.replace("..\\", "") + ")";
-
+	
 	$$(_, 3.3, `Add the new ELA error string`);
 	[, freeVir] = Exe.AddText(eulaString);
 
 	$$(_, 3.5, `Update all PUSHes & assigments using the original EULA error string`)
 	const found = [
-		PUSH(0x20) + PUSH(addr),
-		JMP(0x10) + PUSH(addr),
-		MOV(ESI, addr),
-		MOV(EDI, addr)
+		PUSH(0x20) + PUSH(strAddr),
+		JMP(0x10) + PUSH(strAddr),
+		CMOVAE(R32, [POS4WC]) + PUSH(strAddr), 
+		MOV(ESI, strAddr),
+		MOV(EDI, strAddr)
 	].filter( code =>
 	{
 		const addrs = Exe.FindHexN(code);
@@ -299,6 +376,32 @@ CustomLicenseTxt = function(_)
 
 	if (found.isEmpty())
 		throw Error("No EULA references found");
+
+	if (ROC.FullVer == 14.29)
+	{
+		$$(_, 4.1, `Look for the assignment using XMM0 for latest clients`)
+		let parts =
+		[
+			MOVUPS(XMM0, [strAddr])         //movups xmm0, dqword ptr [strAddr]
+		,
+			MOVUPS([EAX], XMM0)             //movups dqword ptr [eax], xmm0
+		+	MOVUPS(XMM0, [strAddr + 0x10])  //movups xmm0, dqword ptr [strAddr + 10h]
+		,
+			MOVUPS([EAX, 0x10], XMM0)       //movups dqword ptr [eax + 10h], xmm0
+		,
+			MOV(BYTE_PTR, [EAX, 0x20], 0)   //mov byte ptr [eax + 20h], 0
+		];
+		addr = Exe.FindHex(parts);
+		if (addr < 0)
+			throw Error("New EULA reference missing");
+		
+		$$(_, 4.2, `Replace the string references and update the null pointer offset in the code`)
+		const [,mov1, mov2, , mov3] = MapAddrs(addr, parts);
+		Exe.SetInt32(mov1 - 4, freeVir);
+		Exe.SetInt32(mov2 - 4, freeVir + 0x10);
+		if (eulaString.length < 31)
+			Exe.SetInt8(mov3 - 2, eulaString.length + 1);
+	}
 
 	return true;
 };

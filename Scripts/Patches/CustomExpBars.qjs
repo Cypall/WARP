@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2013-2023 Neo-Mind                                       *
+*   Copyright (C) 2013-2024 Neo-Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2020-11-11                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -63,10 +63,16 @@ CustomBarLimits = function(_)
 
 	$$(_, 2.3, `Find the ESI + const assignment between afterBB & refAddr`)
 	addr = Exe.FindHex( MOV(ECX, [ESI, POS1WC]), afterBB, refAddr); //mov ecx, dword ptr [esi + dispA]
-
-	if (addr < 0 && Exe.Version > 11) //VC14.16
-		addr = Exe.FindHex( MOV(EDX, [ESI, POS1WC]), afterBB, refAddr); //mov edx, dword ptr [esi + dispA]
-
+	
+	//VC14
+	if (addr < 0 && Exe.Version > 11)
+	{
+		code = Exe.MinorVer < 20
+		?	MOV(EDX, [ESI, POS1WC])  //mov edx, dword ptr [esi + dispA]
+		:	MOV(ECX, [EDI, POS1WC])  //mov ecx, dword ptr [edi + dispA]
+		;
+		addr = Exe.FindHex(code, afterBB, refAddr); 
+	}
 	if (addr < 0)
 		throw Error("First ESI ptr missing");
 
