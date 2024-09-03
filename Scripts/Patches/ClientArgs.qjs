@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
 *   Copyright (C) ?-2015 Shinryo                                           *
-*   Copyright (C) 2020-2023 Secret                                         *
+*   Copyright (C) 2020-2024 Secret                                         *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Secret                                        *
 *   Created Date  : 2020-11-10                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-26                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -77,13 +77,8 @@ No1and1Arg = function(_)
 ///
 IgnoreAccArg = function(_)
 {
-	$$(_, 1.1, `Find the string '/account:'`)
-	let addr = Exe.FindText("/account:");
-	if (addr < 0)
-		throw Error("'/account:' not found");
-
-	$$(_, 1.2, `Find where it is PUSHed`)
-	addr = Exe.FindHex(PUSH(addr));
+	$$(_, 1, `Find where '/account:' is PUSHed`)
+	let addr = Exe.FindHex(PUSH(this.StrAddr));
 	if (addr < 0)
 		throw Error("'/account:' not used");
 
@@ -107,4 +102,13 @@ IgnoreAccArg = function(_)
 	Exe.SetJMP(addr2 + 5);
 
 	return true;
+};
+
+///
+/// \brief Only needed if the string is acually present
+///
+IgnoreAccArg.validate = function()
+{
+	this.StrAddr = Exe.FindText("/account:");
+	return (this.StrAddr > 0);
 };

@@ -1,6 +1,6 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144)                                          *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-25                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -32,20 +32,25 @@
 CustomCharCreateId = function(_)
 {
 	$$(_, 1, `Find location where packet 0xA39 is being sent`)
+	const offset = ROC.FullVer == 14.29 ? WCn : NEG3WC;
 	const prefix =
 		MOV(EAX, 0xA39)         //mov eax, 0A39h
-	+	MOV([EBP, NEG3WC], AX)  //mov word ptr [ebp + a39.packet_id], ax
+	+	MOV([EBP, offset], AX)  //mov word ptr [ebp + a39.packet_id], ax
 	+	MOVZX(EAX, [POS4WC])    //movzx eax, dword ptr [clrAddr]
-	+	MOV([EBP, NEG3WC], AX)  //mov word ptr [ebp + a39.hair_color], ax
+	+	MOV([EBP, offset], AX)  //mov word ptr [ebp + a39.hair_color], ax
 	+	MOVZX(EAX, [POS4WC])    //movzx eax, dword ptr [styleAddr]
-	+	MOV([EBP, NEG3WC], AX)  //mov word ptr [ebp + a39.hair_style], ax
+	+	MOV([EBP, offset], AX)  //mov word ptr [ebp + a39.hair_style], ax
 	+	MOV(AL, [POS4WC])       //mov al, byte ptr[slotAddr]
-	+	MOV([EBP, NEG3WC], AL)  //mov byte ptr [ebp + a39.slot], al
+	+	MOV([EBP, offset], AL)  //mov byte ptr [ebp + a39.slot], al
 	;
 
 	const suffix =
 		MOVSX(EAX, [POS4WC])    //movsx eax, dword ptr [jobIdAddr] <-- patch here
-	+	MOV([EBP, NEG3WC], EAX) //mov dword ptr [ebp + a39.starting_job_id], eax
+	+	(ROC.FullVer == 14.29
+	?	MOVUPS([EBP, offset], EAX) //movups dqword ptr [ebp + <unkn>], eax
+	:	""
+	)
+	+	MOV([EBP, offset], EAX) //mov dword ptr [ebp + a39.starting_job_id], eax
 	;
 
 	const addrs = Exe.FindHexN(1, 1, prefix + suffix);

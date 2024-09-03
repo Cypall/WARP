@@ -1,7 +1,7 @@
 /**************************************************************************\
 *                                                                          *
-*   Copyright (C) 2018-2023 Andrei Karas (4144)                            *
-*   Copyright (C) 2020-2023 Neo Mind                                       *
+*   Copyright (C) 2018-2024 Andrei Karas (4144)                            *
+*   Copyright (C) 2020-2024 Neo Mind                                       *
 *                                                                          *
 *   This file is a part of WARP project (specific to RO clients)           *
 *                                                                          *
@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Andrei (4144), Neo-Mind                                *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2023-08-26                                             *
+*   Last Modified : 2024-08-23                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -50,7 +50,7 @@ CloseCutinOnEsc = function(_)
 
 	$$(_, 1.3, `Look for the GetGameMode CALL inside UIIllustWnd::SendMsg`)
 	const prefix =
-		MOV(ECX, POS3WC)            //mov ecx, <g_modeMgr>
+		MOV(ECX, POS4WC)            //mov ecx, <g_modeMgr>
 	+	CALL(ALLWC)                 //call CModeMgr::GetGameMode
 	;
 	code = "";
@@ -107,20 +107,31 @@ CloseCutinOnEsc = function(_)
 
 	const suffix = Exe.GetHex(addr2 + prefix.byteCount(), code.byteCount());
 
-	$$(_, 2.1, `Construct the common code for new & old clients`)
-	let part2 =
-		CMP(R32, -1)   //cmp regA, -1
-	+	((Exe.BuildDate > 20101116 && Exe.BuildDate < 20141020) || Exe.BuildDate > 20200800
-	?
-		JE(POS1WC)     //je _skip
-	:                  // or
-		JZ(WCp)        //jz short _skip
-	)
-	+	PUSH_R         //push regA
-	+	MOV(ECX, R32)  //mov ecx, regB
-	+	CALL(ALLWC)    //call UIWindowMgr::DeleteWindow
-	;
-
+	$$(_, 2.1, `Construct the common codes for new & old clients`)
+	let part2;
+	if (ROC.FullVer)
+	{
+		part2 =
+			PUSH_R         //push regA
+		+	MOV(ECX, R32)  //mov ecx, regB
+		+	CALL(ALLWC)    //call UIWindowMgr::DeleteWindow
+		;
+	}
+	else
+	{
+		part2 =
+			CMP(R32, -1)   //cmp regA, -1
+		+	((Exe.BuildDate > 20101116 && Exe.BuildDate < 20141020) || Exe.BuildDate > 20200800
+		?
+			JE(POS1WC)     //je _skip
+		:                  // or
+			JZ(WCp)        //jz short _skip
+		)
+		+	PUSH_R         //push regA
+		+	MOV(ECX, R32)  //mov ecx, regB
+		+	CALL(ALLWC)    //call UIWindowMgr::DeleteWindow
+		;
+	}
 	const dwinOffset = part2.byteCount() - 4;
 
 	part2 += Exe.BuildDate <= 20120222 ?
@@ -134,7 +145,7 @@ CloseCutinOnEsc = function(_)
 	if (Exe.Version > 11) //VC14.16
 	{
 		part1 =
-			PUSH(R32)              //push regA
+			PUSH_R                 //push regA
 		+	MOV(ECX, POS4WC)       //mov ecx, offset
 		+	CALL(ALLWC)            //call UIWindowMgr::check_close  <-- patch here
 		;
@@ -143,8 +154,9 @@ CloseCutinOnEsc = function(_)
 		part1 +=
 			MOV(ECX, EAX)          //mov ecx, eax
 		+	TEST(ECX, ECX)         //test ecx, ecx
-		+	JE(WCp)                //je short _skip#2
+		+	JE(ROC.FullVer == 14.29 ? POS2WC : WCp) //je _skip#2
 		;
+
 		addr = Exe.FindHex(part1);
 	}
 	else
@@ -179,15 +191,42 @@ CloseCutinOnEsc = function(_)
 	addr += part1.byteCount();
 
 	let jmpVir;
+	if (ROC.FullVer == 14.29)
+	{
+		$$(_, 2.5, `Construct code for identifying default case`)
+		let part1b =
+			CMP(R32, -1)   //cmp regA, -1
+		+	JNE(NEG2WC)
+		;
+		const jneOffset = part1b.byteCount() - 4;
+
+		part1b +=
+			CMP([POS4WC], 2)
+		+	JNE(NEG2WC)
+		+	PUSH_0
+		;
+
+		$$(_ + 2.6, `Find the default case for VC14.29 clients`)
+		addr = Exe.FindHex(part1b, addr, addr + 0x150);
+		if (addr < 0)
+			throw Error("Default case missing");
+
+
+		$$(_ + 2.7, `Save the address as Jump address & Move to jne target`)
+		jmpVir = Exe.Phy2Vir(addr, CODE);
+		addr = Exe.GetTgtAddr(addr + jneOffset, PHYSICAL);
+	}
+
 	if (Exe.Version > 11)
 	{
-		$$(_, 2.5, `Find the 2nd part for VC14.16 clients`)
-		addr = Exe.FindHex(part2, addr, addr + 0x100);
+		$$(_, 2.8, `Find the 2nd part for VC14.* clients`)
+		addr = Exe.FindHex(part2, addr, addr + 0x100);	
 		if (addr < 0)
 			throw Error("DeleteWindow CALL missing");
 
-		$$(_, 2.6, `Save the address as Jump address`)
-		jmpVir = Exe.Phy2Vir(addr, CODE);
+		$$(_, 2.9, `Save the address as Jump address for VC14.16`)
+		if(ROC.FullVer != 14.29)
+			jmpVir = Exe.Phy2Vir(addr, CODE);
 	}
 	else
 	{
