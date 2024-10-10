@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Neo-Mind                                               *
 *   Created Date  : 2021-08-21                                             *
-*   Last Modified : 2024-08-01                                             *
+*   Last Modified : 2024-09-27                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -100,6 +100,10 @@ export var BaseName;
 /**Will contain Version.MinorVer as string**/
 export var FullVer;
 
+/**Will contain the name & address of the default clientinfo xml file if it exists */
+export var ClientInfo;
+export var ClInfoAddr;
+
 /**Common constraint for D_Color type**/
 export const ClrSettings = {format: 'BGR'};
 
@@ -172,12 +176,31 @@ export function load()
 	SprintF      = -1;
 	CreateWin    = -1;
 
+	// ClientInfo pickup
+	if (Exe.BuildDate < 20081100)
+	{
+		ClientInfo = "clientinfo.xml";
+		ClInfoAddr = -1;	
+	}
+	else
+	{
+		$$(_, 3.1, `Check the client for Sakray specific XML`)
+		ClientInfo = "sclientinfo.xml";
+		ClInfoAddr = Exe.FindText(ClientInfo, CASE_INSENSITIVE);
+		if (ClInfoAddr < 0)
+		{
+			$$(_, 3.2, `Look for the main one`)
+			ClientInfo = "clientinfo.xml";
+			ClInfoAddr = Exe.FindText(ClientInfo, CASE_INSENSITIVE);	
+		}
+	}
+
 	IdentifyObj(self, [
 		'RGrfPhy', 'IsRenewal', 'IsZero', 'IsMain', 'Post2010',
 		'HasFP', 'StkReg', 'HasLWhidden', 'HasPktKeys',
 		'CashShopAddr', 'RouletteAddr', 'AdvAgencyAddr',
 		'GetModHandle', 'GetProcAddr', 'OutDbgStrA', 'MsgBoxA',
-		'Kernel32', 'BaseName'
+		'Kernel32', 'BaseName', 'ClientInfo', 'ClInfoAddr'
 	]);
 
 	Log.rise();

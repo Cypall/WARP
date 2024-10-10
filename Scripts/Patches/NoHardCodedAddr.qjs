@@ -22,7 +22,7 @@
 *                                                                          *
 *   Author(s)     : Andrei Karas (4144)                                    *
 *   Created Date  : 2020-11-21                                             *
-*   Last Modified : 2024-08-15                                             *
+*   Last Modified : 2024-09-27                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -116,7 +116,7 @@ NoHardCodedAddr = function(_)
 ///        (Only there in more recent clients starting from first zero client version)
 ///
 NoHardCodedAddr.validate = () =>
-	(ROC.IsZero && Exe.BuildDate > 20171019) || Exe.BuildDate >= 20181113;
+	ROC.ClInfoAddr > 0 && ((ROC.IsZero && Exe.BuildDate > 20171019) || Exe.BuildDate >= 20181113);
 
 ///
 /// \brief Helper function to overwrite the specified address with code to use ClientInfo port
