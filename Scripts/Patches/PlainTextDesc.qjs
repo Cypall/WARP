@@ -23,7 +23,7 @@
 *                                                                          *
 *   Author(s)     : Shinryo, Neo-Mind                                      *
 *   Created Date  : 2020-11-12                                             *
-*   Last Modified : 2024-08-08                                             *
+*   Last Modified : 2024-09-27                                             *
 *                                                                          *
 \**************************************************************************/
 
@@ -88,13 +88,13 @@ PlainTextDesc = function(_)
 			}
 		}
 	}
-
+	
 	const addr = Exe.FindHex(prefix + suffix);
 	if (addr < 0)
 		throw Error("Langtype comparison missing");
 
 	$$(_, 3, `Change the conditional jump`)
-	Exe.SetJMP(addr + prefix.byteCount() - 2);
+	Exe.SetJMP(addr + prefix.byteCount());
 
 	return true;
 };
